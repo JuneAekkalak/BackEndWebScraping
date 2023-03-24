@@ -10,7 +10,7 @@ const ArticleSchema = new mongoose.Schema({
     pages: String,
     publisher: String,
     description: String,
-    total_citations:String,
+    total_citations: String,
     url: String,
     author_id: {
         type: mongoose.Schema.Types.ObjectId,
