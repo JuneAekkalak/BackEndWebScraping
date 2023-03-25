@@ -7,7 +7,7 @@ const articlesRouter = require('./routes/articles');
 const scraperRouter = require('./routes/scraper');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+// const PORT = process.env.PORT || 8080;
 
 mongoose.connect('mongodb+srv://root:1234@cluster0.l78dbvc.mongodb.net/test', {
   useNewUrlParser: true,
@@ -23,8 +23,8 @@ app.use('/authors', authorsRouter);
 app.use('/articles', articlesRouter);
 app.use('/scraper', scraperRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server started on port ${PORT}`);
+// });
 
 exports.app = functions.https.onRequest(app);
