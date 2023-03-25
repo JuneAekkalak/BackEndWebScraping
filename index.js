@@ -26,3 +26,5 @@ app.use('/scraper', scraperRouter);
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
+
+exports.app = functions.https.onRequest(app);
