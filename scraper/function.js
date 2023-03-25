@@ -29,7 +29,7 @@ const getURL = async (html, selector) => {
 
   content.each(function () {
     const obj = {
-      name: $(this).find("> div > div > h3 > a").text(),
+      name: $(this).find("div > div > h3 > a").text(),
       url:
         "https://scholar.google.com" + $(this).find("> div > a").attr("href"),
     };
@@ -101,7 +101,7 @@ const getArticleOfAuthor = async (selector, URL, author_id) => {
   console.log("Number of Articles : ", content.length);
   console.log("Article");
   //content.length
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 4; i++) {
     console.log(i + 1);
     const e = content[i];
     const detail_page_url = e.url;
