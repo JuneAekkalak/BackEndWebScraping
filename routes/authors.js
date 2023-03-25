@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
-const Author = require('../models/Author.js');
+const Author = require('../models/Author');
 
 //findall
 router.get('/', (req, res, next) => {
@@ -33,8 +33,8 @@ router.get('/author/:authorName', (req, res, next) => {
     const query = {};
 
     if (authorName) {
-        const regex = new RegExp(`^${authorName}`, 'i');
-        query.authorName = { $regex: regex };
+        const regex = new RegExp(`.*${authorName}.*`, 'i');
+        query.author_name = { $regex: regex };
     }
 
     Author.find(query)
