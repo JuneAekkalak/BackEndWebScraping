@@ -7,10 +7,8 @@ const Article = require('../models/Article.js');
 const { ObjectId } = require('mongodb');
 
 const insertDatatoDb = async (all) => {
-
   all.map(async (author) => {
     const objectId = new ObjectId();
-
     const newAuthor = new Author({
       _id: objectId,
       author_name: author.author_name,
