@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getArticleOfAuthor, getAllAuthorURL } = require("../scraper/function");
+const { getAuthorAllDetail, getAllAuthorURL } = require("../scraper/function");
 
 const Author = require('../models/Author.js');
 const Article = require('../models/Article.js');
@@ -44,32 +44,40 @@ const insertDatatoDb = async (all) => {
   });
 };
 
+
 router.get("/", async (req, res) => {
-  const startURL = "https://scholar.google.com/citations?view_op=view_org&org=16635630670053173100&hl=en&oi=io";
-  const URL = "https://scholar.google.com/citations?view_op=view_org&hl=en&org=16635630670053173100&after_author=wYdMAA_4__8J&astart=20";
+  try {
+    const startURL = "https://scholar.google.com/citations?view_op=view_org&org=16635630670053173100&hl=en&oi=io";
+    const authorURL = await getAllAuthorURL(startURL);
+    let authorAllDetail = [];
+    console.log("")
+    console.log("Start Scraping Researcher Data \n")
 
-  const selectorForURL = "#gsc_sa_ccl > div.gsc_1usr";
-  const authorURL = await getAllAuthorURL(selectorForURL, startURL);
-  const authorURL1 = await getAllAuthorURL(selectorForURL, URL);
-  const allURL = authorURL.concat(authorURL1);
+    for (let i = 0; i < authorURL.length; i++) {
+      console.log("Author ", i + 1, " : " + authorURL[i].name)
+      const number_author = i + 1;
+      const data = await getAuthorAllDetail(authorURL[i].url, number_author);
+      authorAllDetail.push(data)
+      await insertDatatoDb(authorAllDetail)
+      console.log("")
+      console.log("Data insertion was completed successfully")
+      console.log("Researcher name: ", authorURL[i].name)
+      console.log("")
+      authorAllDetail = []
+    }
+    console.log("")
+    console.log("Finish Scraping Researcher Data")
 
-  const selector = "#gsc_a_b > tr";
-  let articleOfAuthor = [];
-  //authorURL.length
-  for (let i = 0; i < allURL.length; i++) {
-    console.log("Author ", i + 1, " : " + allURL[i].name)
-    const num = i + 1;
-    const data = await getArticleOfAuthor(selector, allURL[i].url, num);
-    articleOfAuthor.push(data)
-    console.log(articleOfAuthor)
-    await insertDatatoDb(articleOfAuthor)
-    articleOfAuthor = []
+    res.status(200).json({
+      meseage: "successful",    
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Unable to extract data",
+    });
   }
-  console.log("Finish")
-
-  res.status(200).json({
-    meseage: "successful"
-  });
 });
+
 
 module.exports = router;
