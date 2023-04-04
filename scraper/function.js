@@ -19,15 +19,15 @@ const sendRequestGetDetail = async (URL) => {
       "User-Agent": randomUserAgent,
     },
   });
-  const html = iconv.decode(response.data, "utf-8");
+  return iconv.decode(response.data, "utf-8");
 
-  return html;
+  // return html;
 };
 
 const getAllAuthorURL = async (url) => {
   const html = await sendRequestGetDetail(url);
-  const allURL = await getURL(html);
-  return allURL;
+  return await getURL(html);
+  // return allURL;
 };
 
 const getURL = async (html) => {
