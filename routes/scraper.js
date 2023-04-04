@@ -47,7 +47,7 @@ const insertDatatoDb = async (all) => {
 
 router.get("/", async (req, res) => {
   try {
-    const startURL = "https://scholar.google.com/citations?view_op=view_org&org=16635630670053173100&hl=en&oi=io";
+    const startURL = "https://scholar.google.com/citations?view_op=view_org&hl=en&org=16635630670053173100&after_author=JVJCAY79__8J&astart=40";
     const authorURL = await getAllAuthorURL(startURL);
     let authorAllDetail = [];
     console.log("")
