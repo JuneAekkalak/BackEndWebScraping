@@ -47,12 +47,13 @@ const insertDatatoDb = async (all) => {
 
 router.get("/", async (req, res) => {
   try {
-    const startURL = "https://scholar.google.com/citations?view_op=view_org&hl=en&org=16635630670053173100&after_author=JVJCAY79__8J&astart=40";
+    const startURL = "https://scholar.google.com/citations?view_op=view_org&hl=en&org=16635630670053173100&after_author=d71DAWn7__8J&astart=20";
     const authorURL = await getAllAuthorURL(startURL);
     let authorAllDetail = [];
     console.log("")
     console.log("Start Scraping Researcher Data \n")
-    // authorURL.length
+
+    //authorURL.length
     for (let i = 0; i < authorURL.length; i++) {
       console.log("Author ", i + 1, " : " + authorURL[i].name)
       const number_author = i + 1;
@@ -69,7 +70,7 @@ router.get("/", async (req, res) => {
     console.log("Finish Scraping Researcher Data")
 
     res.status(200).json({
-      meseage: "successful",
+      meseage: "successful",    
     });
   } catch (error) {
     console.error(error);
