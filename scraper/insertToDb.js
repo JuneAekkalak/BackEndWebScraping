@@ -60,6 +60,7 @@ const insertDataToDbScopus = async (data) => {
         const newAuthor = new AuthorScopus({
             _id: objectId,
             author_name: data.name,
+            citation:data.citation,
             citations_by: data.citations_by,
             documents: data.documents,
             h_index: data.h_index,
