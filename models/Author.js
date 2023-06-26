@@ -10,17 +10,17 @@ const AuthorSchema = new mongoose.Schema({
             citations: {
                 all: Number,
                 since_2018: Number,
-
+            
             },
             h_index: {
                 all: Number,
                 since_2018: Number,
-
+              
             },
             i10_index: {
                 all: Number,
                 since_2018: Number,
-
+              
             }
         }],
         graph: [{
@@ -28,7 +28,7 @@ const AuthorSchema = new mongoose.Schema({
             citations: Number
         }]
     }
-}, {
-    _id: false
+},{
+    _id:false
 })
-module.exports = mongoose.model('Author', AuthorSchema)
+module.exports = mongoose.model('Author',AuthorSchema)
