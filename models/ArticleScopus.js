@@ -15,6 +15,7 @@ const ArticleScopusSchema = new mongoose.Schema({
     author_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Author' // Reference to the 'Author' model
-    }
+    },
+    source_id: String
 })
 module.exports = mongoose.model('ArticleScopus', ArticleScopusSchema)

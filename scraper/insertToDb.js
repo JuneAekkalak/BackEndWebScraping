@@ -83,6 +83,8 @@ const insertDataToDbScopus = async (data) => {
             abstract: articleData.abstract,
             url: articleData.url,
             author_id: objectId,
+            ...(articleData.hasOwnProperty('source_id') && { source_id: articleData.source_id }),
+            
         }));
 
         await ArticleScopus.insertMany(articles);
