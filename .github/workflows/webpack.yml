@@ -22,7 +22,23 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Build
+    - name: Install Puppeteer dependencies
       run: |
-        npm install
-        npx webpack
+        sudo apt-get update
+        sudo apt-get install -y \
+          libx11-xcb1 \
+          libxrandr2 \
+          libasound2 \
+          libpangocairo-1.0-0 \
+          libatk1.0-0 \
+          libatk-bridge2.0-0 \
+          libgtk-3-0
+
+    - name: Install project dependencies
+      run: npm install
+
+    - name: Build
+      run: npx webpack
+
+    - name: Deploy to Vercel
+      run: npx vercel --prod
