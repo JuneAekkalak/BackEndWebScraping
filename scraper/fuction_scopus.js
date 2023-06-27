@@ -11,7 +11,7 @@ const scraper = async () => {
     const allURLs = await getURLScopus();
     const allAuthors = [];
     //allAuthors
-    for (let i = 2; i < 10; i++) {
+    for (let i = 0; i < allURLs.length; i++) {
         console.log(
             `Scraping Author ${i + 1} of ${allURLs.length}: ${allURLs[i].name}`
         );
