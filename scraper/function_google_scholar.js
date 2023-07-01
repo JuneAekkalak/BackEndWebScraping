@@ -1,24 +1,46 @@
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const axios = require("axios");
-const { insertDataToDb } = require("../scraper/insertToDb");
+const { insertDataToDbScholar } = require("../scraper/insertToDb");
+const userAgent = require('user-agents');
+
 process.setMaxListeners(100);
 let numArticle = null;
+let linkError = []
+let url_not = []
+let url_author
 
 const getUserScholarId = async (url) => {
-  const regex = /user=([\w-]+)/;
-  const match = url.match(regex);
-  if (match) {
-    return match[1];
-  } else {
+  try {
+    const regex = /user=([\w-]+)/;
+    const match = url.match(regex);
+    if (match) {
+      return match[1];
+    } else {
+      return null;
+    }
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error('An error occurred:', error);
     return null;
   }
 };
 
-async function checkElementExists(page, selector) {
-  const element = await page.$(selector);
-  return element !== null;
-}
+
+const checkElementExists = async (page, selector) => {
+  try {
+    const element = await page.$(selector);
+    return element !== null;
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error('An error occurred:', error);
+    return false;
+  }
+};
 
 const check_url = async (authorObject) => {
   try {
@@ -26,6 +48,8 @@ const check_url = async (authorObject) => {
     const name = authorObject.name.split(".").pop().trim().split(" ");
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+
     const url = `https://scholar.google.com/scholar?hl=th&as_sdt=0%2C5&q=${name[0]}+${name[1]}`;
     await page.goto(url, { waitUntil: "networkidle2" });
     const selector =
@@ -48,51 +72,63 @@ const check_url = async (authorObject) => {
 
     return url_checked;
   } catch (error) {
-    // console.error("An error occurred during check_url:", error);
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during check_url:", error);
     return authorObject.url;
   }
 };
 
 
 const getURLScholar = async () => {
-  let data = [];
   try {
     const response = await axios.get(
       "https://iriedoc.wu.ac.th/data/apiwris/RPS_PERSON.php"
     );
-    data = response.data;
+    const data = response.data;
+
+    const scholar = data
+      .map((element) => ({
+        name: element.TITLEENG + " " + element.FNAMEENG + " " + element.LNAMEENG,
+        url: element.GGSCHOLAR,
+      }))
+      .filter((scholar) => scholar.url)
+      .map((scholar) => ({
+        ...scholar,
+        url:
+          scholar.url.includes("=th") || scholar.url.includes("=en")
+            ? scholar.url.replace("=th", "=en")
+            : scholar.url + "&hl=en",
+      }));
+
+    return scholar;
   } catch (error) {
-    console.log(error);
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getURLScholar:", error);
+    return [];
   }
-
-  const scholar = data
-    .map((element) => ({
-      name: element.TITLEENG + " " + element.FNAMEENG + " " + element.LNAMEENG,
-      url: element.GGSCHOLAR,
-    }))
-    .filter((scholar) => scholar.url)
-    .map((scholar) => ({
-      ...scholar,
-      url:
-        scholar.url.includes("=th") || scholar.url.includes("=en")
-          ? scholar.url.replace("=th", "=en")
-          : scholar.url + "&hl=en",
-    }));
-
-  return scholar;
 };
 
-const getAuthorAllDetail = async (authorObject, number_author, length) => {
-  const browser = await puppeteer.launch({ headless: "new" });
-  const page = await browser.newPage();
-  let url_checked = await check_url(authorObject);
-  let authorAllDetail;
-  let url_not_ready;
 
+const getAuthorAllDetail = async (authorObject, number_author, length) => {
+  url_author = {
+    name: authorObject.name,
+    url: authorObject.url,
+    index: number_author - 1,
+  };
   try {
-    const response = await page.goto(url_checked, {
-      waitUntil: "networkidle2",
-    });
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+
+    let url_checked = await check_url(authorObject);
+    let authorAllDetail;
+    let url_not_ready;
+
+    const response = await page.goto(url_checked, { waitUntil: "networkidle2", });
 
     if (response.ok()) {
       await scrapeAdditionalData(page);
@@ -103,17 +139,28 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
       console.log("Author ", number_author, " / ", length, ": " + authorObject.name);
       console.log("Number of Articles: ", content.length);
 
-      const article_detail_promises = content.map(
-        async (article_sub_data, i) => {
+      const batchSize = 50; // Set the desired batch size
+
+      const article_detail_promises = [];
+
+      for (let i = 0; i < content.length; i += batchSize) {
+        console.log(" i = ", i)
+        const batch = content.slice(i, i + batchSize);
+
+        const batch_promises = batch.map(async (article_sub_data) => {
           const detail_page_url = article_sub_data.url;
           return fetchArticleDetail(browser, detail_page_url);
-        }
-      );
+        });
+
+        article_detail_promises.push(...batch_promises);
+      }
 
       authorAllDetail = await getAuthorDetail(html, url_checked);
       authorAllDetail.articles = await Promise.all(article_detail_promises);
 
-      insertDataToDb(authorAllDetail);
+      if (authorAllDetail) {
+        insertDataToDbScholar(authorAllDetail);
+      }
 
       console.log("");
       console.log("Data insertion of ", authorObject.name, " was completed successfully");
@@ -125,36 +172,43 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
         url: url_checked,
         index: number_author - 1,
       };
+      url_not.push(url_not_ready)
+      console.log("url_not : ", url_not)
     }
-  } catch (error) {
-    authorAllDetail = false;
-    url_not_ready = {
-      name: authorObject.name,
-      url: url_checked,
-      index: number_author - 1,
-    };
-  } finally {
-    await browser.close();
-  }
 
-  return { all: authorAllDetail, url_not_ready: url_not_ready };
+    await browser.close();
+
+    return { all: authorAllDetail, url_not_ready: url_not_ready };
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getAuthorAllDetail:", error);
+    return { all: false, url_not_ready: null };
+  }
 };
+
 
 const scrapeAdditionalData = async (page) => {
   try {
     while (await page.$eval("#gsc_bpf_more", (button) => !button.disabled)) {
       await page.click("#gsc_bpf_more");
-      await page.waitForTimeout(1450);
+      await page.waitForTimeout(2000);
       await page.waitForSelector("#gsc_a_b");
     }
   } catch (error) {
-    // console.error(`Error: ${error.message}`);
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error(`Error occurred during scrapeAdditionalData: ${error.message}`);
   }
 };
 
 const fetchArticleDetail = async (browser, detail_page_url) => {
   try {
     const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+
     await page.goto(detail_page_url, { waitUntil: "networkidle2" });
     const detail_page_html = await page.content();
     const article_data = await getArticleDetail(
@@ -164,32 +218,52 @@ const fetchArticleDetail = async (browser, detail_page_url) => {
     await page.close();
     return article_data;
   } catch (error) {
-    // console.error("An error occurred during fetchArticleDetail:", error);
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during fetchArticleDetail:", error);
     return null;
   }
 };
 
 
 const getArticleUrl = async (html, selector) => {
-  const $ = cheerio.load(html);
-  const content = $(selector);
-  const news_data = content.map(function () {
-    return {
-      title: $(this).find("td.gsc_a_t > a").text(),
-      url: "https://scholar.google.com" + $(this).find("a").attr("href"),
-    };
-  }).get();
-  return news_data;
+  try {
+    const $ = cheerio.load(html);
+    const content = $(selector);
+    const news_data = content.map(function () {
+      return {   //#gsc_a_b > tr > td.gsc_a_t > a
+        title: $(this).find("td.gsc_a_t > a").text(),
+        url: "https://scholar.google.com" + $(this).find("a").attr("href"),
+      };
+    }).get();
+    return news_data;
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getArticleUrl:", error);
+    return [];
+  }
 };
 
 
+
 const check_src_image = async (html) => {
-  const $ = cheerio.load(html);
-  const image = $("#gsc_prf_pup-img").attr("src");
-  const src = image.includes("https://scholar.googleusercontent.com")
-    ? image
-    : "https://scholar.googleusercontent.com" + image;
-  return src;
+  try {
+    const $ = cheerio.load(html);
+    const image = $("#gsc_prf_pup-img").attr("src");
+    const src = image.includes("https://scholar.googleusercontent.com")
+      ? image
+      : "https://scholar.googleusercontent.com" + image;
+    return src;
+  } catch (error) {
+    // url_author.message_error = 'An error occurred: '+ error
+    // !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    // console.log("linkError : ",linkError)
+    // console.error("An error occurred during check_src_image:", error);
+    return null;
+  }
 };
 
 const getGraph = async (url) => {
@@ -197,6 +271,8 @@ const getGraph = async (url) => {
     let graph = [];
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+
     try {
       await page.goto(`${url}#d=gsc_md_hist`);
       const html = await page.content();
@@ -242,12 +318,18 @@ const getGraph = async (url) => {
 
       return graph;
     } catch (error) {
-      // console.error("An error occurred during page.goto:", error);
+      url_author.message_error = 'An error occurred: ' + error
+      !linkError.includes(url_author) ? linkError.push(url_author) : null;
+      console.log("linkError : ", linkError)
+      console.error("An error occurred during page.goto:", error);
       await browser.close();
       return null;
     }
   } catch (error) {
-    // console.error("An error occurred during getGraph:", error);
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getGraph:", error);
     return null;
   }
 };
@@ -256,6 +338,8 @@ const getSubTable = async (url) => {
   try {
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
+    await page.setUserAgent(userAgent.random().toString());
+
     try {
       await page.goto(url, { waitUntil: "networkidle2" });
       const html = await page.content();
@@ -297,79 +381,135 @@ const getSubTable = async (url) => {
 
       return table;
     } catch (error) {
-      // console.error("An error occurred during page.goto:", error);
+      url_author.message_error = 'An error occurred: ' + error
+      !linkError.includes(url_author) ? linkError.push(url_author) : null;
+      console.log("linkError : ", linkError)
+      console.error("An error occurred during page.goto:", error);
       await browser.close();
       return null;
     }
   } catch (error) {
-    // console.error("An error occurred during getSubTable:", error);
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getSubTable:", error);
     return null;
   }
 };
 
+
 const getCitation = async (url) => {
-  const citation_by = {};
-  citation_by.table = await getSubTable(url);
-  citation_by.graph = await getGraph(url);
-  return citation_by;
+  try {
+    const citation_by = {};
+    citation_by.table = await getSubTable(url);
+    citation_by.graph = await getGraph(url);
+    return citation_by;
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getCitation:", error);
+    return null;
+  }
 };
 
 const getAuthorDetail = async (html, url) => {
-  const $ = cheerio.load(html);
-  const author_detail = {
-    author_name: $("#gsc_prf_in").text(),
-    department: $("#gsc_prf_i > div:nth-child(2)").text(),
-    subject_area: await getSubjectArea(html),
-    h_index: $(
-      "#gsc_rsb_st > tbody > tr:nth-child(2) > td:nth-child(2)"
-    ).text(),
-    image: await check_src_image(html),
-    citation_by: await getCitation(url),
-  };
+  try {
+    const $ = cheerio.load(html);
+    const author_detail = {
+      author_name: $("#gsc_prf_in").text(),
+      department: $("#gsc_prf_i > div:nth-child(2)").text(),
+      subject_area: await getSubjectArea(html),
+      h_index: $(
+        "#gsc_rsb_st > tbody > tr:nth-child(2) > td:nth-child(2)"
+      ).text(),
+      image: await check_src_image(html),
+      citation_by: await getCitation(url),
+    };
 
-  return author_detail;
+    return author_detail;
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getAuthorDetail:", error);
+    return null;
+  }
 };
 
 const getSubjectArea = async (html) => {
-  const $ = cheerio.load(html);
-  const subject = $("#gsc_prf_int > a");
-  const subjectArea = subject.map((i, el) => $(el).text()).get();
-  return subjectArea;
+  try {
+    const $ = cheerio.load(html);
+    const subject = $("#gsc_prf_int > a");
+    const subjectArea = subject.map((i, el) => $(el).text()).get();
+    return subjectArea;
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getSubjectArea:", error);
+    return null;
+  }
 };
+
 
 const getArticleDetail = async (html, url) => {
-  const $ = cheerio.load(html);
-  const content = $("#gsc_oci_table > div.gs_scl");
+  try {
+    const $ = cheerio.load(html);
+    const content = $("#gsc_oci_table > div.gs_scl");
 
-  const field = [];
-  let article_data = {};
-  article_data.article_id = numArticle;
-  article_data.article_name = $("#gsc_oci_title").text();
+    const field = [];
+    let article_data = {};
+    article_data.article_id = numArticle;
+    article_data.article_name = $("#gsc_oci_title").text();
 
-  content.map(async function (i) {
-    let fieldText = $(this).find(".gsc_oci_field").text().trim().toLowerCase();
-    fieldText = fieldText.replace(" ", "_");
-    const fieldValue = $(this).find(".gsc_oci_value > div > a").text().trim();
-    field.push(fieldText);
+    content.map(async function (i) {
+      try {
+        let fieldText = $(this).find(".gsc_oci_field").text().trim().toLowerCase();
+        fieldText = fieldText.replace(" ", "_");
+        const fieldValue = $(this).find(".gsc_oci_value > div > a").text().trim();
+        field.push(fieldText);
 
-    if (fieldText === "total_citations") {
-      article_data[fieldText] = fieldValue.replace("Cited by", "").trim();
-    } else {
-      article_data[fieldText] = $(this).find(".gsc_oci_value").text().trim();
-      if (fieldText === "authors") {
-        article_data[fieldText] = await getAuthor(article_data[fieldText]);
+        if (fieldText === "total_citations") {
+          article_data[fieldText] = fieldValue.replace("Cited by", "").trim();
+        } else {
+          article_data[fieldText] = $(this).find(".gsc_oci_value").text().trim();
+          if (fieldText === "authors") {
+            article_data[fieldText] = await getAuthor(article_data[fieldText]);
+          }
+        }
+      } catch (error) {
+        url_author.message_error = 'An error occurred: ' + error
+        !linkError.includes(url_author) ? linkError.push(url_author) : null;
+        console.log("linkError : ", linkError)
+        console.error(`An error occurred during article detail mapping: ${error}`);
+        return null;
       }
-    }
-  });
-  article_data.url = url;
+    });
 
-  return article_data;
+    article_data.url = url;
+
+    return article_data;
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getArticleDetail:", error);
+    return null;
+  }
 };
 
-
 const getAuthor = async (author) => {
-  const author_data = author.split(",").map((item) => item.trim());
-  return author_data;
+  try {
+    const author_data = author.split(",").map((item) => item.trim());
+    return author_data;
+  } catch (error) {
+    url_author.message_error = 'An error occurred: ' + error
+    !linkError.includes(url_author) ? linkError.push(url_author) : null;
+    console.log("linkError : ", linkError)
+    console.error("An error occurred during getAuthor:", error);
+    return null;
+  }
 };
 
 module.exports = {

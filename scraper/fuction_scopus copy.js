@@ -221,50 +221,51 @@ const processDropdowns = async (page) => {
 
 const scrapViewFullSource = async (page) => {
     const source_id = await getSourceID(page);
-    if (source_id) {
-        const selector = "#source-preview-details-link";
-        if (await page.$(selector)) {
-            const link_data = await page.waitForSelector(selector);
-            const link = await page.evaluate((element) => element.href, link_data);
-            await page.goto(link, { waitUntil: "networkidle2" });
-            const html = await page.content();
-            const $ = cheerio.load(html);
-            const content = $(
-                "#jourlSection > div.col-md-9.col-xs-9.noPadding > div > ul > li"
-            );
-            const field = [];
-            let journal = {};
-
-            journal.source_id = source_id;
-            journal.journal_name = $("#jourlSection > div.col-md-9.col-xs-9.noPadding > div > h2").text(),
-                content.map(async function (i) {
-                    let fieldText = $(this)
-                        .find("span.left")
-                        .text()
-                        .trim()
-                        .toLowerCase()
-                        .replace(":", "");
-                    fieldText = fieldText.replace(" ", "_");
-                    const fieldValue = $(this).find("span.right").text().trim();
-                    field.push(fieldText);
-                    if (fieldText === "subject_area") {
-                        journal[fieldText] = await scrapSubjectAreaJournal(html);
-                    } else {
-                        journal[fieldText] = fieldValue;
-                    }
-                });
-
-            journal.cite_source = await processDropdowns(page);
-
-            return journal;
-        } else {
-            return null;
-        }
-    } else {
-        return null;
+    if (!source_id) {
+      return null;
     }
-};
-
+  
+    const selector = "#source-preview-details-link";
+    if (!(await page.$(selector))) {
+      return null;
+    }
+  
+    const link_data = await page.waitForSelector(selector);
+    const link = await page.evaluate((element) => element.href, link_data);
+    await page.goto(link, { waitUntil: "networkidle2" });
+    const html = await page.content();
+    const $ = cheerio.load(html);
+    const content = $("#jourlSection > div.col-md-9.col-xs-9.noPadding > div > ul > li");
+    const field = [];
+    let journal = {
+      source_id: source_id,
+      journal_name: $("#jourlSection > div.col-md-9.col-xs-9.noPadding > div > h2").text(),
+    };
+  
+    await Promise.all(
+      content.map(async function () {
+        let fieldText = $(this)
+          .find("span.left")
+          .text()
+          .trim()
+          .toLowerCase()
+          .replace(":", "");
+        fieldText = fieldText.replace(" ", "_");
+        const fieldValue = $(this).find("span.right").text().trim();
+        field.push(fieldText);
+        if (fieldText === "subject_area") {
+          journal[fieldText] = await scrapSubjectAreaJournal(html);
+        } else {
+          journal[fieldText] = fieldValue;
+        }
+      })
+    );
+  
+    journal.cite_source = await processDropdowns(page);
+  
+    return journal;
+  };
+  
 const scrapSubjectAreaJournal = async (html) => {
     const $ = cheerio.load(html);
     const content = $("#csSubjContainer > span");

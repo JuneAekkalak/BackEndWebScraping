@@ -1,13 +1,13 @@
-const Author = require('../models/Author.js');
-const Article = require('../models/Article.js');
-const AuthorScopus = require('../models/AuthorScopus.js');
+const Author = require('../models/Author');
+const Article = require('../models/Article');
+const AuthorScopus = require('../models/AuthorScopus');
 const ArticleScopus = require('../models/ArticleScopus.js');
 const Journal = require('../models/journal.js');
 
 const { ObjectId } = require('mongodb');
 process.setMaxListeners(100);
 
-const insertDataToDb = async (data) => {
+const insertDataToDbScholar = async (data) => {
     try {
         const objectId = new ObjectId();
 
@@ -19,48 +19,49 @@ const insertDataToDb = async (data) => {
             image: data.image,
             citation_by: {
                 table: data.citation_by.table,
-                graph: data.citation_by.graph
-            }
+                graph: data.citation_by.graph,
+            },
         });
 
-        await Promise.all(data.articles.map(async (article) => {
-            const newArticle = new Article({
-                article_name: article.article_name,
-                authors: article.authors,
-                publication_date: article.publication_date,
-                conference: article.conference,
-                institution: article.institution,
-                journal: article.journal,
-                volume: article.volume,
-                issue: article.issue,
-                pages: article.pages,
-                publisher: article.publisher,
-                description: article.description,
-                total_citations: article.total_citations,
-                url: article.url,
-                author_id: objectId,
+        if (data.articles) {
+            data.articles.map(async (article) => {
+                if (article) {
+                    const newArticle = new Article({
+                        article_name: article.article_name,
+                        authors: article.authors,
+                        publication_date: article.publication_date,
+                        conference: article.conference,
+                        institution: article.institution,
+                        journal: article.journal,
+                        volume: article.volume,
+                        issue: article.issue,
+                        pages: article.pages,
+                        publisher: article.publisher,
+                        description: article.description,
+                        total_citations: article.total_citations,
+                        url: article.url,
+                        author_id: objectId,
+                    });
+                    return await newArticle.save();
+                }
             });
-            return await newArticle.save();
-        }));
+        }
 
-        await newAuthor.save();
-
-        return { success: true };
+        return await newAuthor.save();
     } catch (error) {
-        // console.error("Error inserting data:", error);
+        console.error("Error inserting data:", error);
         throw error;
     }
 };
 
-
-const insertDataToDbScopus = async (data) => {
+const insertDataToDbScopus = async (data, author_name) => {
     try {
         const objectId = new ObjectId();
 
         const newAuthor = new AuthorScopus({
             _id: objectId,
             author_name: data.name,
-            citation:data.citation,
+            citations: data.citation,
             citations_by: data.citations_by,
             documents: data.documents,
             h_index: data.h_index,
@@ -70,31 +71,34 @@ const insertDataToDbScopus = async (data) => {
             url: data.url,
         });
 
-        const articles = data.articles.map((articleData) => ({
-            article_name: articleData.name,
-            co_author: articleData.co_author,
-            document_type: articleData.document_type,
-            source_type: articleData.source_type,
-            issn: articleData.issn,
-            original_language: articleData.original_language,
-            publisher: articleData.publisher,
-            E_ISSN: articleData.E_ISSN,
-            author_keywords: articleData.author_keywords, // Assuming only one author keyword
-            abstract: articleData.abstract,
-            url: articleData.url,
-            author_id: objectId,
-            ...(articleData.hasOwnProperty('source_id') && { source_id: articleData.source_id }),
-            
-        }));
+        const articles = data.articles.map((articleData) => {
+            const article = {
+                article_name: articleData.name,
+                ...(articleData.hasOwnProperty('source_id') && { source_id: articleData.source_id }),
+                co_author: articleData.co_author,
+                document_type: articleData.document_type,
+                source_type: articleData.source_type,
+                issn: articleData.issn,
+                original_language: articleData.original_language,
+                publisher: articleData.publisher,
+                author_keywords: articleData.author_keywords,
+                abstract: articleData.abstract,
+                url: articleData.url,
+                author_id: objectId,
+            };
+
+            return article;
+        });
+
 
         await ArticleScopus.insertMany(articles);
         await newAuthor.save();
-        console.log('Data saved successfully to MongoDB.');
+        console.log('Authors and Articles Data of ' + author_name + ' saved successfully to MongoDB.');
+        console.log("");
     } catch (error) {
-        console.error('Error saving data to MongoDB:', error);
+        console.error('Error saving Authors and Articles data to MongoDB:', error);
     }
 };
-
 
 const insertDataToJournal = async (data) => {
     try {
@@ -113,14 +117,14 @@ const insertDataToJournal = async (data) => {
         });
 
         await newJournal.save();
-        console.log('Data saved successfully to MongoDB.');
+        // console.log('Journal Data saved successfully to MongoDB.');
     } catch (error) {
         console.error('Error saving data to MongoDB:', error);
     }
 };
 
 module.exports = {
-    insertDataToDb,
+    insertDataToDbScholar,
     insertDataToDbScopus,
     insertDataToJournal
 };

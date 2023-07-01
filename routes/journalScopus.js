@@ -2,15 +2,31 @@ const express = require("express");
 const router = express.Router();
 const Journal = require('../models/journal');
 
-router.get('/', async (req, res, next) => {
-    Journal.find().then((journal) => {
-        res.json(journal);
-    }).catch((err) => {
-        next(err);
-    });
-})
 
+router.get('/', (req, res, next) => {
+    const pageNumber = req.query.page || 1;
+    const limit = 20;
 
+    Journal.find()
+        .skip((pageNumber - 1) * limit)
+        .limit(limit)
+        .then((journal) => {
+            res.json(journal);
+        })
+        .catch((err) => {
+            next(err);
+        });
+});
+
+router.get('/getTotal', (req, res, next) => {
+    Journal.countDocuments()
+        .then((count) => {
+            res.json({ count });
+        })
+        .catch((err) => {
+            next(err);
+        });
+});
 
 router.get('/journalId/:id', async (req, res, next) => {
     try {

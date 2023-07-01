@@ -5,11 +5,28 @@ const Author = require('../models/AuthorScopus');
 
 //findall
 router.get('/', (req, res, next) => {
-    Author.find().then((authors) => {
-        res.json(authors);
-    }).catch((err) => {
-        next(err);
+  const pageNumber = req.query.page || 1;
+  const limit = 20;
+
+  Author.find()
+    .skip((pageNumber - 1) * limit)
+    .limit(limit)
+    .then((authors) => {
+      res.json(authors);
+    })
+    .catch((err) => {
+      next(err);
     });
+});
+
+router.get('/getTotal', (req, res, next) => {
+  Author.countDocuments()
+      .then((count) => {
+          res.json({ count });
+      })
+      .catch((err) => {
+          next(err);
+      });
 });
 
 router.get('/:id', (req, res, next) => {
@@ -27,21 +44,21 @@ router.get('/:id', (req, res, next) => {
 });
 
 router.get('/author/:authorName', (req, res, next) => {
-    const { authorName } = req.params;
-    const query = {};
+  const { authorName } = req.params;
+  const query = {};
 
-    if (authorName) {
-        const regex = new RegExp(`.*${authorName}.*`, 'i');
-        query.author_name = { $regex: regex };
-    }
+  if (authorName) {
+    const regex = new RegExp(`.*${authorName}.*`, 'i');
+    query.author_name = { $regex: regex };
+  }
 
-    Author.find(query)
-        .then((authors) => {
-            res.json(authors);
-        })
-        .catch((err) => {
-            next(err);
-        });
+  Author.find(query)
+    .then((authors) => {
+      res.json(authors);
+    })
+    .catch((err) => {
+      next(err);
+    });
 });
 
 
