@@ -128,6 +128,3 @@ module.exports = {
     insertDataToDbScopus,
     insertDataToJournal
 };
-
-
-
