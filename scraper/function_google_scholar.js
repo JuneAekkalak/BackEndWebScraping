@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const axios = require("axios");
-const { insertDataToDbScholar } = require("../scraper/insertToDb");
+const { insertDataToDbScholar  } = require("../scraper/insertToDb");
 const userAgent = require('user-agents');
 
 process.setMaxListeners(100);
@@ -20,9 +20,9 @@ const getUserScholarId = async (url) => {
       return null;
     }
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error('An error occurred:', error);
     return null;
   }
@@ -34,9 +34,9 @@ const checkElementExists = async (page, selector) => {
     const element = await page.$(selector);
     return element !== null;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error('An error occurred:', error);
     return false;
   }
@@ -72,11 +72,11 @@ const check_url = async (authorObject) => {
 
     return url_checked;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+     url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during check_url:", error);
-    return authorObject.url;
+    return authorObject.url; 
   }
 };
 
@@ -104,9 +104,9 @@ const getURLScholar = async () => {
 
     return scholar;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getURLScholar:", error);
     return [];
   }
@@ -128,7 +128,7 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
     let authorAllDetail;
     let url_not_ready;
 
-    const response = await page.goto(url_checked, { waitUntil: "networkidle2", });
+    const response = await page.goto(url_checked, {waitUntil: "networkidle2",});
 
     if (response.ok()) {
       await scrapeAdditionalData(page);
@@ -142,19 +142,19 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
       const batchSize = 50; // Set the desired batch size
 
       const article_detail_promises = [];
-
+      
       for (let i = 0; i < content.length; i += batchSize) {
-        console.log(" i = ", i)
+        console.log(" i = ",i)
         const batch = content.slice(i, i + batchSize);
-
+      
         const batch_promises = batch.map(async (article_sub_data) => {
           const detail_page_url = article_sub_data.url;
           return fetchArticleDetail(browser, detail_page_url);
         });
-
+      
         article_detail_promises.push(...batch_promises);
       }
-
+      
       authorAllDetail = await getAuthorDetail(html, url_checked);
       authorAllDetail.articles = await Promise.all(article_detail_promises);
 
@@ -173,16 +173,16 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
         index: number_author - 1,
       };
       url_not.push(url_not_ready)
-      console.log("url_not : ", url_not)
+      console.log("url_not : ",url_not)
     }
 
     await browser.close();
 
     return { all: authorAllDetail, url_not_ready: url_not_ready };
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getAuthorAllDetail:", error);
     return { all: false, url_not_ready: null };
   }
@@ -197,9 +197,9 @@ const scrapeAdditionalData = async (page) => {
       await page.waitForSelector("#gsc_a_b");
     }
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error(`Error occurred during scrapeAdditionalData: ${error.message}`);
   }
 };
@@ -218,11 +218,11 @@ const fetchArticleDetail = async (browser, detail_page_url) => {
     await page.close();
     return article_data;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during fetchArticleDetail:", error);
-    return null;
+    return null; 
   }
 };
 
@@ -239,9 +239,9 @@ const getArticleUrl = async (html, selector) => {
     }).get();
     return news_data;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getArticleUrl:", error);
     return [];
   }
@@ -318,17 +318,17 @@ const getGraph = async (url) => {
 
       return graph;
     } catch (error) {
-      url_author.message_error = 'An error occurred: ' + error
+      url_author.message_error = 'An error occurred: '+ error
       !linkError.includes(url_author) ? linkError.push(url_author) : null;
-      console.log("linkError : ", linkError)
+      console.log("linkError : ",linkError)
       console.error("An error occurred during page.goto:", error);
       await browser.close();
       return null;
     }
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getGraph:", error);
     return null;
   }
@@ -381,17 +381,17 @@ const getSubTable = async (url) => {
 
       return table;
     } catch (error) {
-      url_author.message_error = 'An error occurred: ' + error
+      url_author.message_error = 'An error occurred: '+ error
       !linkError.includes(url_author) ? linkError.push(url_author) : null;
-      console.log("linkError : ", linkError)
+      console.log("linkError : ",linkError)
       console.error("An error occurred during page.goto:", error);
       await browser.close();
       return null;
     }
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getSubTable:", error);
     return null;
   }
@@ -405,9 +405,9 @@ const getCitation = async (url) => {
     citation_by.graph = await getGraph(url);
     return citation_by;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getCitation:", error);
     return null;
   }
@@ -429,9 +429,9 @@ const getAuthorDetail = async (html, url) => {
 
     return author_detail;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getAuthorDetail:", error);
     return null;
   }
@@ -444,9 +444,9 @@ const getSubjectArea = async (html) => {
     const subjectArea = subject.map((i, el) => $(el).text()).get();
     return subjectArea;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getSubjectArea:", error);
     return null;
   }
@@ -479,9 +479,9 @@ const getArticleDetail = async (html, url) => {
           }
         }
       } catch (error) {
-        url_author.message_error = 'An error occurred: ' + error
+        url_author.message_error = 'An error occurred: '+ error
         !linkError.includes(url_author) ? linkError.push(url_author) : null;
-        console.log("linkError : ", linkError)
+        console.log("linkError : ",linkError)
         console.error(`An error occurred during article detail mapping: ${error}`);
         return null;
       }
@@ -491,9 +491,9 @@ const getArticleDetail = async (html, url) => {
 
     return article_data;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getArticleDetail:", error);
     return null;
   }
@@ -504,9 +504,9 @@ const getAuthor = async (author) => {
     const author_data = author.split(",").map((item) => item.trim());
     return author_data;
   } catch (error) {
-    url_author.message_error = 'An error occurred: ' + error
+    url_author.message_error = 'An error occurred: '+ error
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
-    console.log("linkError : ", linkError)
+    console.log("linkError : ",linkError)
     console.error("An error occurred during getAuthor:", error);
     return null;
   }
