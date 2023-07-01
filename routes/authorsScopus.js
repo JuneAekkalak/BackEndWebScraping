@@ -5,10 +5,17 @@ const Author = require('../models/AuthorScopus');
 
 //findall
 router.get('/', (req, res, next) => {
-    Author.find().then((authors) => {
-        res.json(authors);
-    }).catch((err) => {
-        next(err);
+  const pageNumber = req.query.page || 1;
+  const limit = 20;
+
+  Author.find()
+    .skip((pageNumber - 1) * limit)
+    .limit(limit)
+    .then((authors) => {
+      res.json(authors);
+    })
+    .catch((err) => {
+      next(err);
     });
 });
 
