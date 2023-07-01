@@ -43,6 +43,22 @@ router.get('/:id', (req, res, next) => {
         });
 });
 
+
+
+router.get('/:id', (req, res, next) => {
+  const authorId = req.params.id;
+  Author.findById(authorId)
+    .then((author) => {
+      if (!author) {
+        return res.status(404).json({ message: 'Author not found' });
+      }
+      res.json(author);
+    })
+    .catch((err) => {
+      next(err);
+    });
+});
+
 router.get('/author/:authorName', (req, res, next) => {
     const { authorName } = req.params;
     const query = {};

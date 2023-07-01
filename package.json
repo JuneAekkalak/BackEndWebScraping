@@ -10,19 +10,24 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^3.2.4",
     "axios": "^1.2.5",
     "body-parser": "^1.20.2",
     "cheerio": "^1.0.0-rc.12",
+    "circular-json": "^0.5.9",
     "cors": "^2.8.5",
     "cron": "^2.2.0",
+    "esm": "^3.2.25",
     "express": "^4.18.2",
     "google-search-results-nodejs": "^2.1.0",
     "mongodb": "^5.1.0",
     "mongoose": "^7.0.1",
     "morgan": "~1.9.1",
     "nodemon": "^2.0.21",
+    "p-limit": "^4.0.0",
     "puppeteer": "^19.6.2",
-    "user-agents": "^1.0.1322",
+    "queue": "^7.0.0",
+    "user-agents": "^1.0.1421",
     "xpath": "^0.0.32"
   }
 }
