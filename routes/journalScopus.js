@@ -54,4 +54,22 @@ router.get('/getBySourceId/:id', async (req, res, next) => {
     }
 });
 
+router.get('/journal/:journalName', (req, res, next) => {
+    const { journalName } = req.params;
+    const query = {};
+
+    if (journalName) {
+        const regex = new RegExp(.* ${ journalName }.*, 'i');
+        query.journal_name = { $regex: regex };
+    }
+
+    Journal.find(query)
+        .then((journal) => {
+            res.json(journal);
+        })
+        .catch((err) => {
+            next(err);
+        });
+});
+
 module.exports = router;

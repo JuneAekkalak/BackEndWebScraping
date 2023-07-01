@@ -4,53 +4,56 @@ const cheerio = require("cheerio");
 const {
   insertDataToDbScopus,
 } = require("./insertToDb");
-let roundScraping = 0; 
+let roundScraping = 0;
 let allAuthors = [];
-let author_backup = {};
+let successCount = 0;
 
 const scraper = async () => {
   try {
     const allURLs = await getURLScopus();
+    const batchSize = 5;
+    const totalAuthors = allURLs.length;
+    
+    for (let i = successCount ; i < totalAuthors; i += batchSize) {
+      const batchAuthors = allURLs.slice(i, i + batchSize);
 
-    for (let i = roundScraping; i < allURLs.length; i++) {
-      roundScraping = i;
-      console.log(
-        `Scraping Author ${i + 1} of ${allURLs.length}: ${allURLs[i].name}`
-      );
-      console.log(`URL: ${allURLs[i].url}`);
+      const scrapingPromises = batchAuthors.map(async (author) => {
+        console.log(
+          `Scraping Author ${i + 1} of ${totalAuthors}: ${author.name}`
+        );
+        console.log(`URL: ${author.url}`);
 
-      const browser = await puppeteer.launch({ headless: "new" });
-      const page = await browser.newPage();
+        const browser = await puppeteer.launch({ headless: "new" });
+        const page = await browser.newPage();
 
-      try {
-        if (Object.keys(author_backup).length === 0) {
-          const author = await scrapeAuthorData(allURLs[i].url, page);
-          author_backup = author;
+        try {
+          const authorData = await scrapeAuthorData(author.url, page);
+          const articleData = await scrapeArticleData(author.url, page);
+          authorData.articles = articleData;
+          allAuthors.push(authorData);
+          await insertDataToDbScopus(authorData, author.name);
+          successCount++;
+        } catch (error) {
+          console.error("Error occurred while scraping:", error);
+          await scraper(); // Retry the scraping for the current batch
+        } finally {
+          await browser.close();
         }
-        const article = await scrapeArticleData(allURLs[i].url, page);
+      });
 
-        if (Object.keys(author_backup).length !== 0 && article.length !== 0) {
-          author_backup.articles = article;
-          allAuthors.push(author_backup);
-          await insertDataToDbScopus(author_backup);
-          author_backup = {};
-        }
-      } catch (error) {
-        console.error("Error occurred while scraping:", error);
-        await scraper();
-      } finally {
-        await browser.close();
-      }
+      await Promise.all(scrapingPromises);
     }
 
     console.log("Finish Scraping Scopus");
+    console.log(`Successful scraping count: ${successCount}`);
     return allAuthors;
   } catch (error) {
     console.error("An error occurred:", error);
-    await scraper();
+    await scraper(); // Retry the scraping from the beginning
     return [];
   }
 };
+
 
 let roundArticle = 0;
 let article_detail = [];
@@ -237,7 +240,7 @@ const getSourceID = async (page) => {
         const id = $("#source-preview-details-link").attr("href").split("/")[2];
         if (!sourceID.includes(id)) {
           sourceID.push(id);
-          console.log("sourceIDAll : ", sourceID);
+          // console.log("sourceIDAll : ", sourceID);
           return id;
         } else {
           return id;
