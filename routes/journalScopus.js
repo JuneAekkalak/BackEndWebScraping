@@ -59,7 +59,7 @@ router.get('/journal/:journalName', (req, res, next) => {
     const query = {};
 
     if (journalName) {
-        const regex = new RegExp(.* ${ journalName }.*, 'i');
+        const regex = new RegExp(`.*${journalName}.*`, 'i');
         query.journal_name = { $regex: regex };
     }
 
