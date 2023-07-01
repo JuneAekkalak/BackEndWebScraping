@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Journal = require('../models/journal');
 
-
 router.get('/', (req, res, next) => {
     const pageNumber = req.query.page || 1;
     const limit = 20;
@@ -56,5 +55,4 @@ router.get('/getBySourceId/:id', async (req, res, next) => {
 });
 
 module.exports = router;
-
 

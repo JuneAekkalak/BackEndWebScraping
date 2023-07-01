@@ -29,7 +29,6 @@ router.get('/getTotal', (req, res, next) => {
         });
 });
 
-
 router.get('/:id', (req, res, next) => {
     const authorId = req.params.id;
     Author.findById(authorId)
