@@ -4,7 +4,7 @@ const cheerio = require("cheerio");
 const {
   insertDataToDbScopus,
 } = require("./insertToDb");
-let roundScraping = 0; 
+let roundScraping = 0;
 let allAuthors = [];
 let author_backup = {};
 

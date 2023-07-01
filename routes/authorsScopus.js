@@ -21,12 +21,12 @@ router.get('/', (req, res, next) => {
 
 router.get('/getTotal', (req, res, next) => {
   Author.countDocuments()
-      .then((count) => {
-          res.json({ count });
-      })
-      .catch((err) => {
-          next(err);
-      });
+    .then((count) => {
+      res.json({ count });
+    })
+    .catch((err) => {
+      next(err);
+    });
 });
 
 router.get('/:id', (req, res, next) => {

@@ -55,4 +55,3 @@ router.get('/getBySourceId/:id', async (req, res, next) => {
 });
 
 module.exports = router;
-
