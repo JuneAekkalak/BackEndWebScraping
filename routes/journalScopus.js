@@ -17,6 +17,16 @@ router.get('/', (req, res, next) => {
         });
 });
 
+router.get('/getTotal', (req, res, next) => {
+    Journal.countDocuments()
+        .then((count) => {
+            res.json({ count });
+        })
+        .catch((err) => {
+            next(err);
+        });
+});
+
 router.get('/journalId/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
