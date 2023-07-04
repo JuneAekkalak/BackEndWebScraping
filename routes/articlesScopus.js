@@ -19,7 +19,7 @@ router.get('/articleId/:id', async (req, res, next) => {
 router.get('/getByArthorId/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
-        const article = await Article.find({'author_id' : id});
+        const article = await Article.find({'author_scopus_id' : id});
         if (!article) {
             return res.status(404).json({ error: 'Article not found' });
         }
