@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const portfinder = require('portfinder');
 
 const authorsRouter = require('./routes/authors');
 const articlesRouter = require('./routes/articles');
@@ -12,11 +13,11 @@ const journalRouter = require('./routes/journalScopus');
 const app = express();
 const PORT = process.env.PORT || 8080;
 //mongodb+srv://root:1234@db01.uyg1g.mongodb.net/test
-// wu-researcher
+// wu-researcher wurisdb 
 mongoose.connect('mongodb+srv://root:1234@cluster0.l78dbvc.mongodb.net/test', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  dbName: 'wurisdb'
+  dbName: 'wu-researcher'
 })
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error(err));
@@ -30,7 +31,13 @@ app.use('/articlesScopus', articlesScopusRouter);
 app.use('/journals', journalRouter);
 app.use('/scraper', scraperRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+portfinder.getPort((err, port) => {
+  if (err) {
+    console.error(err);
+  } else {
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  }
 });
 
