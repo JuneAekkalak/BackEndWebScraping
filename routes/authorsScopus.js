@@ -31,7 +31,7 @@ router.get('/getTotal', (req, res, next) => {
 
 router.get('/:id', (req, res, next) => {
   const authorId = req.params.id;
-  Author.findById(authorId)
+  Author.find({'author_scopus_id' : authorId})
     .then((author) => {
       if (!author) {
         return res.status(404).json({ message: 'Author not found' });

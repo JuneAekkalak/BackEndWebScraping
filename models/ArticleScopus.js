@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const ArticleScopusSchema = new mongoose.Schema({
     article_name: String,
-    source_id:String,
+    source_id: String,
     co_author: Array,
     document_type: String,
     source_type: String,
