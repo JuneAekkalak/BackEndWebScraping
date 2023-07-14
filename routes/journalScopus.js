@@ -2,20 +2,28 @@ const express = require("express");
 const router = express.Router();
 const Journal = require('../models/journal');
 
-router.get('/', (req, res, next) => {
-    const pageNumber = req.query.page || 1;
-    const limit = 20;
+router.get('/', async (req, res, next) => {
+    try {
+        const { sortField, sortOrder, page } = req.query;
+        const pageNumber = page || 1;
+        const limit = 20;
 
-    Journal.find()
-        .skip((pageNumber - 1) * limit)
-        .limit(limit)
-        .then((journal) => {
-            res.json(journal);
-        })
-        .catch((err) => {
-            next(err);
-        });
+        const sortQuery = {};
+        if (sortField === 'journal-name') {
+            sortQuery['journal_name'] = sortOrder === 'desc' ? -1 : 1;
+        }
+
+        const journals = await Journal.find({})
+            .sort(sortQuery)
+            .skip((pageNumber - 1) * limit)
+            .limit(limit);
+
+        res.json(journals);
+    } catch (error) {
+        next(error);
+    }
 });
+
 
 router.get('/getTotal', (req, res, next) => {
     Journal.countDocuments()

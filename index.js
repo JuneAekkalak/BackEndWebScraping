@@ -10,17 +10,23 @@ const articlesScopusRouter = require('./routes/articlesScopus');
 const authorsScopusRouter = require('./routes/authorsScopus');
 const journalRouter = require('./routes/journalScopus');
 
+const connectToMongoDB = require("./qurey/connectToMongoDB");
+(async () => {
+  await connectToMongoDB();
+})();
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 //mongodb+srv://root:1234@db01.uyg1g.mongodb.net/test
 // wu-researcher wurisdb 
-mongoose.connect('mongodb+srv://root:1234@cluster0.l78dbvc.mongodb.net/test', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  dbName: 'wu-researcher'
-})
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error(err));
+// mongoose.connect('mongodb://adminwuris:wurisadmin@192.168.75.58:27017/', {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+//   dbName: 'wurisdb'
+// })
+//   .then(() => console.log('Connected to MongoDB'))
+//   .catch((err) => console.error(err));
+
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors()); // Add this line to enable CORS
