@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const Journal = require('../models/journal');
 
+// http://localhost:8000/journals?sortField=journal-name&sortOrder=desc
+
 router.get('/', async (req, res, next) => {
     try {
         const { sortField, sortOrder, page } = req.query;

@@ -9,11 +9,11 @@ router.get('/', async (req, res, next) => {
     try {
         const { sortField, sortOrder, page } = req.query;
         const pageNumber = page || 1;
-        const limit = 20;
+        const limit = 1000;
 
         const sortQuery = {};
         if (sortField === 'h-index') {
-            sortQuery['citation_by.table.h_index.all'] = sortOrder === 'desc' ? -1 : 1;
+            sortQuery.h_index = sortOrder === 'desc' ? -1 : 1;
         } else if (sortField === 'document-count') {
             sortQuery.document_count = sortOrder === 'desc' ? -1 : 1;
         } else if (sortField === 'name') {
@@ -31,7 +31,14 @@ router.get('/', async (req, res, next) => {
             },
             {
                 $addFields: {
-                    document_count: { $size: '$articles' }
+                    document_count: { $size: '$articles' },
+                    h_index: {
+                        $cond: {
+                            if: { $eq: ['$citation_by.table.h_index.all', null] },
+                            then: 0,
+                            else: { $toInt: { $arrayElemAt: ['$citation_by.table.h_index.all', 0] } }
+                        }
+                    }
                 }
             },
             {
@@ -41,7 +48,8 @@ router.get('/', async (req, res, next) => {
                     department: 1,
                     subject_area: 1,
                     image: 1,
-                    document_count: 1
+                    h_index: { $ifNull: ['$h_index', 0] },
+                    document_count: { $toInt: '$document_count' }
                 }
             },
             {
@@ -60,6 +68,7 @@ router.get('/', async (req, res, next) => {
         next(error);
     }
 });
+
 
 router.get('/getTotal', (req, res, next) => {
     Author.countDocuments()
