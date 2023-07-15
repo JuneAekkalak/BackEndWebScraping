@@ -9,7 +9,7 @@ router.get('/', async (req, res, next) => {
     try {
         const { sortField, sortOrder, page } = req.query;
         const pageNumber = page || 1;
-        const limit = 1000;
+        const limit = 20;
 
         const sortQuery = {};
         if (sortField === 'h-index') {
