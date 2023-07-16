@@ -94,22 +94,56 @@ router.get('/:id', (req, res, next) => {
         });
 });
 
-router.get('/author/:authorName', (req, res, next) => {
-    const { authorName } = req.params;
-    const query = {};
+router.get('/author/:authorName', async (req, res, next) => {
+    try {
+        const { authorName } = req.params;
+        const query = {};
+        
+        if (authorName) {
+            const regex = new RegExp(`.*${authorName}.*`, 'i');
+            query.author_name = { $regex: regex };
+        }
 
-    if (authorName) {
-        const regex = new RegExp(`.*${authorName}.*`, 'i');
-        query.author_name = { $regex: regex };
+        const authors = await Author.aggregate([
+            {
+                $lookup: {
+                    from: 'articles',
+                    localField: '_id',
+                    foreignField: 'author_id',
+                    as: 'articles'
+                }
+            },
+            {
+                $addFields: {
+                    document_count: { $size: '$articles' },
+                    h_index: {
+                        $cond: {
+                            if: { $eq: ['$citation_by.table.h_index.all', null] },
+                            then: 0,
+                            else: { $toInt: { $arrayElemAt: ['$citation_by.table.h_index.all', 0] } }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    author_name: 1,
+                    department: 1,
+                    subject_area: 1,
+                    image: 1,
+                    h_index: { $ifNull: ['$h_index', 0] },
+                    document_count: { $toInt: '$document_count' }
+                }
+            },
+            {
+                $match: query
+            }
+        ]);
+        res.json(authors);
+    } catch (error) {
+        next(error);
     }
-
-    Author.find(query)
-        .then((authors) => {
-            res.json(authors);
-        })
-        .catch((err) => {
-            next(err);
-        });
 });
 
 router.get('/department/:department', (req, res, next) => {
