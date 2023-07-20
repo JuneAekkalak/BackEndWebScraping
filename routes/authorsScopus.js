@@ -3,8 +3,8 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Author = require('../models/AuthorScopus');
 
-// http://localhost:8000/authorsScopus?sortField=h-index&sortOrder=asc
-router.get('/', async (req, res, next) => {
+// http://localhost:8000/scopus/author?sortField=h-index&sortOrder=asc
+router.get('/author', async (req, res, next) => {
   try {
     const { sortField, sortOrder, page } = req.query;
     const pageNumber = page || 1;
@@ -46,6 +46,7 @@ router.get('/', async (req, res, next) => {
           citations: 1,
           h_index: 1,
           documents: 1,
+          wu_documents: 1,
           citations_by: 1
         }
       },
@@ -60,9 +61,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-
-
-router.get('/getTotal', (req, res, next) => {
+router.get('/author/getTotal', (req, res, next) => {
   Author.countDocuments()
     .then((count) => {
       res.json({ count });
@@ -72,7 +71,7 @@ router.get('/getTotal', (req, res, next) => {
     });
 });
 
-router.get('/:id', (req, res, next) => {
+router.get('/author/:id', (req, res, next) => {
   const authorId = req.params.id;
   Author.find({ 'author_scopus_id': authorId })
     .then((author) => {
@@ -86,7 +85,7 @@ router.get('/:id', (req, res, next) => {
     });
 });
 
-router.get('/author/:authorName', (req, res, next) => {
+router.get('/author/name/:authorName', (req, res, next) => {
   const { authorName } = req.params;
   const query = {};
 

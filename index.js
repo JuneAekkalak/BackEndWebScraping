@@ -30,11 +30,11 @@ const PORT = process.env.PORT || 8080;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors()); // Add this line to enable CORS
-app.use('/authors', authorsRouter);
-app.use('/articles', articlesRouter);
-app.use('/authorsScopus', authorsScopusRouter);
-app.use('/articlesScopus', articlesScopusRouter);
-app.use('/journals', journalRouter);
+app.use('/scholar', authorsRouter);
+app.use('/scholar', articlesRouter);
+app.use('/scopus', authorsScopusRouter);
+app.use('/scopus', articlesScopusRouter);
+app.use('/scopus', journalRouter);
 app.use('/scraper', scraperRouter);
 
 portfinder.getPort((err, port) => {

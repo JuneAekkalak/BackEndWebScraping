@@ -3,7 +3,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Article = require('../models/ArticleScopus');
 
-router.get('/articleId/:id', async (req, res, next) => {
+router.get('/article/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
         const article = await Article.findById(id);
@@ -16,7 +16,7 @@ router.get('/articleId/:id', async (req, res, next) => {
     }
 });
 
-router.get('/getByArthorId/:id', async (req, res, next) => {
+router.get('/article/authorId/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
         const article = await Article.find({'author_scopus_id' : id});

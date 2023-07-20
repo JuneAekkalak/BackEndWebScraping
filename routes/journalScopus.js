@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const Journal = require('../models/journal');
 
-// http://localhost:8000/journals?sortField=journal-name&sortOrder=desc
+// http://localhost:8000/scopus/journal?sortField=journal-name&sortOrder=desc
 
-router.get('/', async (req, res, next) => {
+router.get('/journal', async (req, res, next) => {
     try {
         const { sortField, sortOrder, page } = req.query;
         const pageNumber = page || 1;
@@ -27,7 +27,7 @@ router.get('/', async (req, res, next) => {
 });
 
 
-router.get('/getTotal', (req, res, next) => {
+router.get('/journal/getTotal', (req, res, next) => {
     Journal.countDocuments()
         .then((count) => {
             res.json({ count });
@@ -37,10 +37,11 @@ router.get('/getTotal', (req, res, next) => {
         });
 });
 
-router.get('/journalId/:id', async (req, res, next) => {
+router.get('/journal/:source_id', async (req, res, next) => {
     try {
-        const { id } = req.params;
-        const journal = await Journal.findById(id);
+        const { source_id } = req.params;
+        console.log(source_id)
+        const journal = await Journal.find({ 'source_id': source_id });
         if (!journal) {
             return res.status(404).json({ error: 'Journal not found' });
         }
@@ -50,21 +51,7 @@ router.get('/journalId/:id', async (req, res, next) => {
     }
 });
 
-router.get('/getBySourceId/:id', async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        console.log(id)
-        const journal = await Journal.find({ 'source_id': id });
-        if (!journal) {
-            return res.status(404).json({ error: 'Journal not found' });
-        }
-        res.json(journal);
-    } catch (err) {
-        next(err);
-    }
-});
-
-router.get('/journal/:journalName', (req, res, next) => {
+router.get('/journal/name/:journalName', (req, res, next) => {
     const { journalName } = req.params;
     const query = {};
 

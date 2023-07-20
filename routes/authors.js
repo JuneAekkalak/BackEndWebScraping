@@ -5,7 +5,8 @@ const Author = require('../models/Author.js');
 
 
 // http://localhost:8000/authors?sortField=document-count&sortOrder=desc
-router.get('/', async (req, res, next) => {
+
+router.get('/author', async (req, res, next) => {
     try {
         const { sortField, sortOrder, page } = req.query;
         const pageNumber = page || 1;
@@ -67,18 +68,7 @@ router.get('/', async (req, res, next) => {
     }
 });
 
-
-router.get('/getTotal', (req, res, next) => {
-    Author.countDocuments()
-        .then((count) => {
-            res.json({ count });
-        })
-        .catch((err) => {
-            next(err);
-        });
-});
-
-router.get('/:id', (req, res, next) => {
+router.get('/author/:id', (req, res, next) => {
     const authorId = req.params.id;
     Author.findById(authorId)
         .then((author) => {
@@ -92,7 +82,7 @@ router.get('/:id', (req, res, next) => {
         });
 });
 
-router.get('/author/:authorName', async (req, res, next) => {
+router.get('/author/name/:authorName', async (req, res, next) => {
     try {
         const { authorName } = req.params;
         const query = {};
@@ -104,16 +94,7 @@ router.get('/author/:authorName', async (req, res, next) => {
 
         const authors = await Author.aggregate([
             {
-                $lookup: {
-                    from: 'articles',
-                    localField: '_id',
-                    foreignField: 'author_id',
-                    as: 'articles'
-                }
-            },
-            {
                 $addFields: {
-                    document_count: { $size: '$articles' },
                     h_index: {
                         $cond: {
                             if: { $eq: ['$citation_by.table.h_index.all', null] },
@@ -131,7 +112,7 @@ router.get('/author/:authorName', async (req, res, next) => {
                     subject_area: 1,
                     image: 1,
                     h_index: { $ifNull: ['$h_index', 0] },
-                    document_count: { $toInt: '$document_count' }
+                    documents: 1
                 }
             },
             {
@@ -144,18 +125,10 @@ router.get('/author/:authorName', async (req, res, next) => {
     }
 });
 
-router.get('/department/:department', (req, res, next) => {
-    const { department } = req.params;
-    const query = {};
-
-    if (department) {
-        const regex = new RegExp(department, 'i');
-        query.department = { $regex: regex };
-    }
-
-    Author.find(query)
-        .then((authors) => {
-            res.json(authors);
+router.get('/author/getTotal', (req, res, next) => {
+    Author.countDocuments()
+        .then((count) => {
+            res.json({ count });
         })
         .catch((err) => {
             next(err);
