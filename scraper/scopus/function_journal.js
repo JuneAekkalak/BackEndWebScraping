@@ -2,77 +2,147 @@ const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const { insertDataToJournal } = require("../insertToDb/insertToDb");
 const { updateDataToJournal } = require("../insertToDb/insertToDb");
-const { getyearJournal } = require("../../qurey/qurey_function");
-const { getSourceID, getAllSourceIDJournal } = require("../../qurey/qurey_function");
+const {
+  getyearJournal,
+  getCountRecordInJournal,
+} = require("../../qurey/qurey_function");
+const {
+  getSourceID,
+  getAllSourceIDJournal,
+  getAllSourceIdOfArticle,
+  getCiteSourceYearLastestInDb,
+} = require("../../qurey/qurey_function");
+
+const waitForElement = async (selector, maxAttempts = 10, delay = 200) => {
+  let attempts = 0;
+  while (attempts < maxAttempts) {
+    try {
+      await page.waitForSelector(selector, { timeout: 1000 });
+      break;
+    } catch (error) {
+      attempts++;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+};
 
 let roundJournal = 0;
 let journal = [];
 let checkUpdate;
 let checkNotUpdate;
-let firstScraping
-
-const scrapJournal = async (sourceID) => {
+let firstScraping;
+const scrapJournal = async () => {
   try {
     let hasSource = false;
     const batchSize = 5;
     let journalData;
-    if (typeof sourceID === 'undefined' && !sourceID) {
+
+    if ((await getCountRecordInJournal()) === 0) {
+      journalData = await getAllSourceIdOfArticle();
+      console.log("Length_SourceID : ", journalData.length);
+      console.log("journalData = ", journalData);
+    } else {
       hasSource = true;
       journalData = await getAllSourceIDJournal();
-      if (journalData.length === 0) {
-        console.log("Journal is Empty");
-      }
-    } else if (sourceID && sourceID.length > 0) { // Modified condition
-      journalData = sourceID;
     }
 
     for (let i = roundJournal; i < journalData.length; i += batchSize) {
-      roundJournal = i
       const batch = journalData.slice(i, i + batchSize);
+      roundJournal = i;
+      // console.log("\nroundScraping =", roundJournal,"\n");
       const promises = batch.map(async (journalItem, index) => {
         checkUpdate = false;
         checkNotUpdate = false;
-        firstScraping = false;
         let browser;
 
         try {
-          browser = await puppeteer.launch({ headless: "new" }); // Modified puppeteer launch options
+          browser = await puppeteer.launch({ headless: "new" });
           const page = await browser.newPage();
           const currentIndex = i + index + 1;
-          console.log(currentIndex, "/", journalData.length, "| Source ID:", journalItem);
+          console.log(
+            currentIndex,
+            "/",
+            journalData.length,
+            "| Source ID:",
+            journalItem
+          );
           const link = `https://www.scopus.com/sourceid/${journalItem}`;
           await page.goto(link, { waitUntil: "networkidle2" });
           await page.waitForTimeout(1600);
+          await waitForElement(
+            "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
+          );
+          await waitForElement(
+            "#CSCategoryTBody > tr:nth-child(1) > td:nth-child(1) > div.treeLineContainer > span"
+          );
+
           const sourceIDs = await getSourceID(journalItem);
-          let yearJournal = 0;
-          let dropdownOptions = [];
+          let yearLastestInDb = 0;
+          let yearLastestInWebPage = 0;
+          let numNewJournal = 0;
 
           if (hasSource) {
-            yearJournal = await getyearJournal(journalItem);
-            dropdownOptions = await dropDownOption(page);
-            console.log("dropdownOptions == ", dropdownOptions.length);
-            console.log("yearJournal == ", yearJournal, "\n");
+            const yearDb = Number(
+              await getCiteSourceYearLastestInDb(journalItem)
+            );
+            if (yearDb !== null) {
+              // await page.waitForSelector("#year-button > span.ui-selectmenu-text")
+              await waitForElement("#year-button > span.ui-selectmenu-text");
+              yearLastestInWebPage = await scraperCiteScoreYearLastestInWebPage(
+                page
+              );
+              yearLastestInDb = yearDb;
+              numNewJournal = yearLastestInWebPage - yearLastestInDb;
+            }
           }
 
           if (!sourceIDs) {
-            firstScraping = true
-            const data = await scraperJournalData(journalItem, yearJournal);
-            return { status: "fulfilled", value: data, source_id: journalItem, firstScraping: firstScraping };
-          } else if (dropdownOptions.length > yearJournal) {
+            firstScraping = true;
+            console.log("\n------------------------------");
+            console.log("First Scraping Source ID : ", journalItem);
+            console.log("------------------------------");
+            console.log("yearLastestInWebPage = ", yearLastestInWebPage);
+            console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+            const data = await scraperJournalData(
+              journalItem,
+              numNewJournal,
+              page
+            );
+            return {
+              status: "fulfilled",
+              value: data,
+              source_id: journalItem,
+              firstScraping: firstScraping,
+            };
+          } else if (yearLastestInWebPage > yearLastestInDb) {
             checkUpdate = true;
-            console.log("dropdownOptions = ", dropdownOptions.length);
-            console.log("yearJournal = ", yearJournal);
-            console.log("------------------------------");
+            console.log("\n------------------------------");
             console.log("Update Journal Data Source ID : ", journalItem);
-            console.log("------------------------------");
-            const new_cite_source_year = await processDropdowns(page, yearJournal);
-            return { status: "fulfilled", value: new_cite_source_year, source_id: journalItem, checkUpdate: checkUpdate };
+            console.log("-------------------------------");
+            console.log("yearLastestInWebPage = ", yearLastestInWebPage);
+            console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+            const new_cite_source_year = await processDropdowns(
+              page,
+              numNewJournal
+            );
+            return {
+              status: "fulfilled",
+              value: new_cite_source_year,
+              source_id: journalItem,
+              checkUpdate: checkUpdate,
+            };
           } else {
             checkNotUpdate = true;
-            console.log("------------------------------");
+            console.log("\n------------------------------");
             console.log("skip source_id", journalItem);
             console.log("------------------------------");
-            return { status: "fulfilled", value: [], checkNotUpdate: checkNotUpdate };
+            console.log("yearLastestInWebPage = ", yearLastestInWebPage);
+            console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+            return {
+              status: "fulfilled",
+              value: [],
+              checkNotUpdate: checkNotUpdate,
+            };
           }
         } catch (error) {
           return { status: "rejected" };
@@ -84,22 +154,25 @@ const scrapJournal = async (sourceID) => {
       });
 
       const batchResults = await Promise.allSettled(promises);
-      const mappedResults = batchResults.map((result) => result.value.value !== null && result.value.status !== 'rejected');
-      console.log("mappedResults = ", mappedResults);
+      const mappedResults = batchResults.map(
+        (result) =>
+          result.value.value !== null && result.value.status !== "rejected"
+      );
+      // console.log("mappedResults = ", mappedResults);
       const hasFalse = mappedResults.includes(false);
       const finalResult = !hasFalse;
-      // const fulfilledResults = batchResults.filter((result) => result.status === "fulfilled");
-
-
       if (finalResult) {
-        if (batchResults.length === batchSize || batchResults.length === batch.length) {
+        if (
+          batchResults.length === batchSize ||
+          batchResults.length === batch.length
+        ) {
           for (const result of batchResults) {
             if (result.status === "fulfilled") {
               const data = result.value;
               if (data.value.length !== 0 || data.checkUpdate) {
                 if (data.firstScraping) {
                   await insertDataToJournal(data.value, data.source_id);
-                  journal.push(data.value)
+                  journal.push(data.value);
                 } else if (data.checkUpdate) {
                   await updateDataToJournal(data.value, data.source_id);
                 }
@@ -113,65 +186,79 @@ const scrapJournal = async (sourceID) => {
               await scrapJournal();
             }
           }
-
         } else {
           console.log("!== batchsize");
           await scrapJournal();
         }
       } else {
-        console.log("have author null")
+        console.log("have author null");
         await scrapJournal();
       }
 
       roundJournal += batchSize;
     }
     console.log("Finish Scraping Scopus");
-    return journal;
+    // journal
+    return { message: "Finish Scraping journal Scopus" };
   } catch (error) {
     console.error("\nError occurred while scraping\n");
+    await scrapJournal();
     return [];
   }
 };
 
-
+const scraperCiteScoreYearLastestInWebPage = async (page) => {
+  try {
+    const html = await page.content();
+    const $ = cheerio.load(html);
+    const yeareLastest = $("#year-button > span.ui-selectmenu-text").text();
+    return Number(yeareLastest);
+  } catch (error) {
+    console.error(
+      "Error occurred in scraperCiteScoreYearLastestInWebPage:",
+      error
+    );
+    throw error;
+  }
+};
 
 const scrapOneJournal = async (source_id) => {
   try {
     const batchSize = 5;
     let roundJournal = 0;
-
     const journal_data = [];
-    const journal_All = source_id.split(",").map(e => e.trim());
+    const journal_All = source_id.split(",").map((e) => e.trim());
+    const totalJournals = journal_All.length;
 
-    let sizeLoop =
-      journal_All.length < batchSize && journal_All.length > 0
-        ? journal_All.length
-        : batchSize;
+    while (roundJournal < totalJournals) {
+      const batch = journal_All.slice(roundJournal, roundJournal + batchSize);
 
-    for (let i = roundJournal; i < journal_All.length; i += sizeLoop) {
-      const batch = journal_All.slice(i, i + batchSize);
-
-      const promises = batch.map(async (journalItem, index) => {
-        const currentIndex = i + index + 1;
+      const promises = batch.map(async (journalItem) => {
         console.log(
-          currentIndex,
-          "/",
-          journal_All.length,
-          "| Source ID:",
-          journalItem
+          `Scraping Journal (${roundJournal + 1
+          }/${totalJournals}): Source ID ${journalItem}`
         );
 
         try {
-          const data = await scraperJournalData(journalItem, 0);
-          console.log("Finish Scraping Journal ID: ", journalItem);
+          const browser = await puppeteer.launch({ headless: "new" });
+          const page = await browser.newPage();
+          const link = `https://www.scopus.com/sourceid/${journalItem}`;
+          await page.goto(link, { waitUntil: "networkidle2" });
+          // await page.waitForTimeout(1600);
+          await waitForElement(
+            "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
+          );
+          const data = await scraperJournalData(journalItem, 0, page);
+          console.log(`Finish Scraping Journal ID: ${journalItem}`);
           return { status: "fulfilled", value: data };
         } catch (error) {
-          console.error("\nError occurred while scraping\n");
-          return { status: "rejected" }
+          console.error(
+            "Error occurred while scraping Journal ID:",
+            journalItem
+          );
+          return { status: "rejected" };
         }
       });
-
-
 
       const results = await Promise.allSettled(promises);
       results.forEach((result) => {
@@ -179,29 +266,54 @@ const scrapOneJournal = async (source_id) => {
           journal_data.push(result.value.value);
         }
       });
-      roundJournal += batchSize;
 
+      roundJournal += batchSize;
     }
+
     console.log("journal_data =", journal_data);
     return journal_data;
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("Error occurred while scraping:", error);
     return [];
+  }
+};
+
+const scraperChangeNameJournal = async (html) => {
+  try {
+    const $ = cheerio.load(html);
+
+    const sourceLink = $("#jourlSection > div.col-md-9.col-xs-9.noPadding > div > div.metaText.SRL > a").attr("href");
+    const fieldText = $("#jourlSection > div.col-md-9.col-xs-9.noPadding > div > div.metaText.SRL > span").text();
+
+    // Check if the elements exist and have valid values
+    if (sourceLink && fieldText) {
+      let changeJournal = {
+        source_id: sourceLink.split("./")[1],
+        field: fieldText.split(":")[0].trim()
+      };
+      return changeJournal;
+    } else {
+      // console.error('Error: Unable to find required elements or their values.');
+      return null;
+    }
+  } catch (error) {
+    // console.error('Error while scraping:', error);
+    return null;
   }
 };
 
 
 //scrapJournalDetail()
-const scraperJournalData = async (source_id, yearJournal) => {
+const scraperJournalData = async (source_id, numNewJournal, page) => {
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
-    const page = await browser.newPage();
-    const link = `https://www.scopus.com/sourceid/${source_id}`;
-    await page.goto(link, { waitUntil: "networkidle2" });
-    await page.waitForSelector(
-      "#jourlSection > div.col-md-9.col-xs-9.noPadding > div"
-    );
-    const html = await page.content();
+    let html = await page.content();
+
+    const buttonElement = await page.$("#csSubjContainer > button");
+    if (buttonElement) {
+      await page.click("#csSubjContainer > button");
+      await page.waitForTimeout(1300);
+      html = await page.content();
+    }
     const $ = cheerio.load(html);
 
     const journal = {
@@ -249,13 +361,21 @@ const scraperJournalData = async (source_id, yearJournal) => {
 
     await Promise.all(fieldPromises);
 
-    journal.cite_source = await processDropdowns(page, yearJournal);
+    journal.calculated = $("#lastUpdatedTimeStamp")
+      .text()
+      .substring("Calculated on ".length)
+      .replace(",", "");
 
-    await browser.close();
+    const changeJournal = await scraperChangeNameJournal(html);
+    if (changeJournal != null) {
+      journal.changeJournal = changeJournal;
+    }
+
+    journal.cite_source = await processDropdowns(page, numNewJournal);
 
     return journal;
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("\nError occurred while scraping 11111\n : ", error);
     return null;
   }
 };
@@ -264,8 +384,6 @@ const dropDownOption = async (page) => {
   const dropdownSelector = 'select[name="year"]';
   if (await page.$(dropdownSelector)) {
     await page.waitForSelector(dropdownSelector);
-
-    // getDropdownOptions()
     const dropdownOptions = await page.evaluate((selector) => {
       const dropdown = document.querySelector(selector);
       const options = Array.from(dropdown.options).map(
@@ -277,18 +395,19 @@ const dropDownOption = async (page) => {
   }
 };
 
-const processDropdowns = async (page, yearJournal) => {
+const processDropdowns = async (page, numNewJournal) => {
   const dataCitation = [];
   const dropDownOptions = await dropDownOption(page);
   let loopDropDown;
   if (dropDownOptions) {
-    if (yearJournal == 0) {
+    if (numNewJournal == 0) {
       loopDropDown = dropDownOptions.length;
     } else {
-      loopDropDown = dropDownOptions.length - yearJournal;
+      loopDropDown = numNewJournal;
     }
     for (let index = 0; index < loopDropDown; index++) {
       const option = dropDownOptions[index];
+      await page.waitForSelector("#year");
       await page.click(
         "#year-button > span.ui-selectmenu-icon.ui-icon.btn-primary.btn-icon.ico-navigate-down.flexDisplay.flexAlignCenter.flexJustifyCenter.flexColumn"
       );
@@ -315,6 +434,7 @@ const processDropdowns = async (page, yearJournal) => {
     const data = { year, citation, category };
     dataCitation.push(data);
   }
+
   return dataCitation.length > 0 ? dataCitation : null;
 };
 

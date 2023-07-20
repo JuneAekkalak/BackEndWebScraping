@@ -15,23 +15,21 @@ router.get('/', async (req, res, next) => {
         if (sortField === 'h-index') {
             sortQuery.h_index = sortOrder === 'desc' ? -1 : 1;
         } else if (sortField === 'document-count') {
-            sortQuery.document_count = sortOrder === 'desc' ? -1 : 1;
+            sortQuery.documents = sortOrder === 'desc' ? -1 : 1;
         } else if (sortField === 'name') {
             sortQuery.author_name = sortOrder === 'desc' ? -1 : 1;
         }
 
         const authors = await Author.aggregate([
             {
-                $lookup: {
-                    from: 'articles',
-                    localField: '_id',
-                    foreignField: 'author_id',
-                    as: 'articles'
-                }
-            },
-            {
                 $addFields: {
-                    document_count: { $size: '$articles' },
+                    documents: {
+                        $cond: {
+                            if: { $eq: ['$documents', ''] },
+                            then: 0,
+                            else: { $toInt: '$documents' }
+                        }
+                    },
                     h_index: {
                         $cond: {
                             if: { $eq: ['$citation_by.table.h_index.all', null] },
@@ -49,7 +47,7 @@ router.get('/', async (req, res, next) => {
                     subject_area: 1,
                     image: 1,
                     h_index: { $ifNull: ['$h_index', 0] },
-                    document_count: { $toInt: '$document_count' }
+                    documents: 1
                 }
             },
             {
@@ -98,7 +96,7 @@ router.get('/author/:authorName', async (req, res, next) => {
     try {
         const { authorName } = req.params;
         const query = {};
-        
+
         if (authorName) {
             const regex = new RegExp(`.*${authorName}.*`, 'i');
             query.author_name = { $regex: regex };
