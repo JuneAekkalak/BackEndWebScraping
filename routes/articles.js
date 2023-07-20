@@ -19,7 +19,7 @@ router.get('/article/:id', async (req, res, next) => {
     }
 });
 
-router.get('/article/arthorId/:id', async (req, res, next) => {
+router.get('/article/authorId/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
         const article = await Article.find({'author_id' : id});

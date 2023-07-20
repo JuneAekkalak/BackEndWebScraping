@@ -5,7 +5,6 @@ const Author = require('../models/Author.js');
 
 
 // http://localhost:8000/authors?sortField=document-count&sortOrder=desc
-
 router.get('/author', async (req, res, next) => {
     try {
         const { sortField, sortOrder, page } = req.query;
@@ -68,6 +67,16 @@ router.get('/author', async (req, res, next) => {
     }
 });
 
+router.get('/author/getTotal', (req, res, next) => {
+    Author.countDocuments()
+      .then((count) => {
+        res.json({ count });
+      })
+      .catch((err) => {
+        next(err);
+      });
+  });
+
 router.get('/author/:id', (req, res, next) => {
     const authorId = req.params.id;
     Author.findById(authorId)
@@ -123,16 +132,6 @@ router.get('/author/name/:authorName', async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-});
-
-router.get('/author/getTotal', (req, res, next) => {
-    Author.countDocuments()
-        .then((count) => {
-            res.json({ count });
-        })
-        .catch((err) => {
-            next(err);
-        });
 });
 
 module.exports = router;
