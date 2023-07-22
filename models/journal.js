@@ -10,7 +10,6 @@ const JournalSchema = new mongoose.Schema({
     eissn: String,
     source_type: String,
     subject_area: Array,
-    calculated: String,
     changeJournal: Object,
     cite_source: Array
    
