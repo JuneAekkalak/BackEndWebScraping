@@ -11,7 +11,7 @@ const JournalSchema = new mongoose.Schema({
     source_type: String,
     subject_area: Array,
     calculated: String,
-    changeJournal: String,
+    changeJournal: Object,
     cite_source: Array
    
    
