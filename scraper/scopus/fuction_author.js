@@ -26,7 +26,7 @@ const scraperAuthorScopus = async () => {
         const i = roundScraping + index;
         console.log(`Scraping Author ${i + 1} of ${allURLs.length}: ${url.name}`);
         console.log(`URL: ${url.url}`);
-        const browser = await puppeteer.launch({ headless: "new" });
+        const browser = await puppeteer.launch({ headless: false });
         const page = await browser.newPage();
         try {
 
@@ -149,7 +149,7 @@ const scrapeAuthorData = async (url, page) => {
   try {
     const response = await page.goto(url, { waitUntil: "networkidle2" });
     if (response.ok()) {
-      await page.waitForTimeout(1300)
+      await page.waitForTimeout(1500)
       await waitForElement("#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(2) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc")
       const html = await page.content();
       const $ = cheerio.load(html);

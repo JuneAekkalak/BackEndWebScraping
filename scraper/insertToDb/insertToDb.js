@@ -226,14 +226,7 @@ const updateDataToJournal = async (data, source_id) => {
     return {
       year: item.year,
       citation: item.citation,
-      category: [
-        {
-          category_name: item.category[0].category_name,
-          sub_category: item.category[0].sub_category,
-          rank: item.category[0].rank,
-          percentile: item.category[0].percentile
-        }
-      ]
+      category: item.category
     };
   });
   // console.log('mynewdata');
@@ -289,3 +282,10 @@ module.exports = {
   updateDataToJournal,
   updateDataToAuthor
 };
+
+// {
+//   category_name: item.category_name,
+//   sub_category: item.category[0].sub_category,
+//   rank: item.category[0].rank,
+//   percentile: item.category[0].percentile
+// }

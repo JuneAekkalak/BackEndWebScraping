@@ -59,7 +59,7 @@ const scraperArticleScopus = async () => {
         checkUpdate = false;
         checkNotUpdate = false;
         checkFirst = false;
-        const browser = await puppeteer.launch({ headless: "new" });
+        const browser = await puppeteer.launch({ headless: false });
         const page = await browser.newPage();
 
         try {

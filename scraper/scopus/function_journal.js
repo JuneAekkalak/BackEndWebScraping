@@ -62,7 +62,7 @@ const scrapJournal = async (sourceID) => {
         let browser;
 
         try {
-          browser = await puppeteer.launch({ headless: "new" });
+          browser = await puppeteer.launch({ headless: false });
           const page = await browser.newPage();
           const currentIndex = i + index + 1;
           console.log(
