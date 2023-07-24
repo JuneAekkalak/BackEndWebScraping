@@ -2,27 +2,26 @@ const axios = require("axios");
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const { insertAuthorDataToDbScopus, updateDataToAuthor } = require("../insertToDb/insertToDb");
-const { getCountRecordInAuthor } = require("../../qurey/qurey_function");
-
-// const allURLs = require("../json/scopus");
+const { getCountRecordInAuthor, hasScopusIdInAuthor, getOldAuthorData } = require("../../qurey/qurey_function");
+// const allURLs = require("../../json/scopus");
+const { readUrlScopusData } = require("../scopus/function_Json");
 
 const batchSize = 3;
 let roundScraping = 0;
 let allAuthors = [];
-
+let linkError = [];
 
 
 const scraperAuthorScopus = async () => {
   try {
-    let countRecordInAuthor = await getCountRecordInAuthor();
-    // console.log("countRecordInAuthor =", countRecordInAuthor);
-    const allURLs = await getURLScopus();
+    // const allURLs = await getURLScopus();
     //allURLs.length
-    for (let i = roundScraping; i < 3; i += batchSize) {
+    const allURLs = await readUrlScopusData()
+    for (let i = roundScraping; i < allURLs.length; i += batchSize) {
       const batchURLs = allURLs.slice(i, i + batchSize);
 
       roundScraping = i;
-      // console.log("\nroundScraping =", roundScraping,"\n");
+      console.log("\nRound Scraping : ", roundScraping, "\n");
       const promises = batchURLs.map(async (url, index) => {
         const i = roundScraping + index;
         console.log(`Scraping Author ${i + 1} of ${allURLs.length}: ${url.name}`);
@@ -30,11 +29,21 @@ const scraperAuthorScopus = async () => {
         const browser = await puppeteer.launch({ headless: "new" });
         const page = await browser.newPage();
         try {
-          const author = await scrapeAuthorData(url.url, page);
-          allAuthors.push(author);
-          return { status: "fulfilled", author: author };
+
+          let author_data = await scrapeAuthorData(url.url, page);
+          for (const key in author_data) {
+            if (author_data[key] === null || author_data[key] === "") {
+              author_data = null
+              break;
+            }
+          }
+          if (author_data !== null) {
+            allAuthors.push(author_data);
+          }
+
+          return { status: "fulfilled", author: author_data };
         } catch (error) {
-          console.error("\nError occurred while scraping\n");
+          console.error("\nError occurred while scraping\n", error);
         } finally {
           await browser.close();
         }
@@ -46,23 +55,23 @@ const scraperAuthorScopus = async () => {
       const mappedResults = results.map(result => result.value.author !== null);
       const hasFalse = mappedResults.includes(false);
       const finalResult = !hasFalse;
-      // console.log("mappedResults = ",mappedResults)
+      console.log("mappedResults = ", mappedResults)
 
       if (finalResult) {
         if (results.length === batchSize || results.length === batchURLs.length) {
           for (const result of results) {
             if (result.status === "fulfilled") {
-              const data = result.value.author;
-              if (countRecordInAuthor > 0) {
-                console.log("\n-----------------")
-                console.log("Update Author")
-                console.log("-----------------")
+              const data = result.value.author; // id เคยมีไหม
+              if (await hasScopusIdInAuthor(data.author_scopus_id)) {
+                console.log("\n--------------------------------------------------------")
+                console.log("Update Author Data Of ", data.name)
+                console.log("--------------------------------------------------------")
                 await updateDataToAuthor(data);
               } else {
-                console.log("\n------------------")
-                console.log("First Scraping Author")
-                console.log("------------------")
-                await insertAuthorDataToDbScopus(data, data.name);
+                console.log("\n--------------------------------------------------------------")
+                console.log("First Scraping Author Of ", data.name)
+                console.log("---------------------------------------------------------------")
+                await insertAuthorDataToDbScopus(data);
               }
             } else if (result.status === "rejected") {
               console.error("\nError occurred while scraping\n");
@@ -78,14 +87,13 @@ const scraperAuthorScopus = async () => {
         console.log("have author null")
         await scraperAuthorScopus();
       }
-
-
     }
-
-    console.log("Finish Scraping Scopus");
-    return allAuthors;
+    roundScraping = 0;
+    linkError = [];
+    allAuthors = []
+    return { message: "Finish Scraping Author Scopus", error: linkError, numScraping: allAuthors.length };
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("\nError occurred while scraping\n", error);
     return [];
   };
 }
@@ -99,7 +107,7 @@ const scraperOneAuthorScopus = async (scopus_id) => {
       const url = `https://www.scopus.com/authid/detail.uri?authorId=${id}`;
       // console.log(`Scopus ID: ${id}`);
       console.log(`Scraping Author (${index + 1}/${allURLs.length}): Scopus ID ${id}`);
-      const browser = await puppeteer.launch({ headless: "new" });
+      const browser = await puppeteer.launch({ headless: false });
       const page = await browser.newPage();
       try {
         const author = await scrapeAuthorData(url, page);
@@ -139,35 +147,39 @@ const waitForElement = async (selector, maxAttempts = 10, delay = 200) => {
 
 const scrapeAuthorData = async (url, page) => {
   try {
-    await page.goto(url, { waitUntil: "networkidle2" });
-    await page.waitForTimeout(1300)
-    await waitForElement("#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(2) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc")
-    const html = await page.content();
-    const $ = cheerio.load(html);
-    const author = {
-      author_scopus_id: await getScopusID(url),
-      name: $(
-        "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > div > h1 > strong"
-      ).text(),
-      citation: $(
-        "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(1) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc"
-      ).text(),
-      citations_by: $(
-        "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(1) > div > div > div:nth-child(2) > span > p > span > em > strong"
-      ).text(),
-      documents: $(
-        "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(2) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc"
-      ).text(),
-      h_index: $(
-        "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(3) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc"
-      ).text(),
-      subject_area: await scrapSubjectArea(page),
-      citations_graph: await scrapCitation(url, page),
-      documents_graph: await scrapDocument(url, page),
-      url: url,
-    };
-
-    return author;
+    const response = await page.goto(url, { waitUntil: "networkidle2" });
+    if (response.ok()) {
+      await page.waitForTimeout(1300)
+      await waitForElement("#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(2) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc")
+      const html = await page.content();
+      const $ = cheerio.load(html);
+      const author = {
+        author_scopus_id: await getScopusID(url),
+        name: $(
+          "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > div > h1 > strong"
+        ).text(),
+        citation: $(
+          "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(1) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc"
+        ).text(),
+        citations_by: $(
+          "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(1) > div > div > div:nth-child(2) > span > p > span > em > strong"
+        ).text(),
+        documents: $(
+          "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(2) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc"
+        ).text(),
+        h_index: $(
+          "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(3) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc"
+        ).text(),
+        subject_area: await scrapSubjectArea(page),
+        citations_graph: await scrapCitation(url, page),
+        documents_graph: await scrapDocument(url, page),
+        url: url,
+      };
+      return author;
+    } else {
+      linkError.push(url)
+      return
+    }
   } catch (error) {
     console.error("\nError occurred while scraping\n");
     return null;

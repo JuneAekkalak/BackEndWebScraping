@@ -3,21 +3,13 @@ const cheerio = require("cheerio");
 const axios = require("axios");
 const { insertDataToDbScholar } = require("../insertToDb/insertToDb");
 const userAgent = require("user-agents");
-const { getCountAuthorScholar, getCountArticleScholar } = require("../../qurey/qurey_function");
+
+// const {   getCountAuthorScholar, getCountArticleScholar } = require("../../qurey/qurey_function");
 // process.setMaxListeners(100);
-let numArticle = null;
+
 let linkError = [];
 let url_not = [];
 let url_author;
-
-const requestToWebPage = async (url, page) => {
-  const response = await page.goto(url, { waitUntil: "networkidle2" });
-  if (response.ok) {
-    return page;
-  } else {
-    return "page not response ok";
-  }
-};
 
 const getUserScholarId = async (url) => {
   try {
@@ -127,7 +119,11 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
     index: number_author - 1,
   };
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
+    linkError = [];
+    url_not = [];
+    url_author;
+
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.setUserAgent(userAgent.random().toString());
     const scholar_id = await getUserScholarId(authorObject.url)
@@ -173,7 +169,6 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
       authorAllDetail = await getAuthorDetail(html, url_checked);
       authorAllDetail.articles = await Promise.all(article_detail_promises);
       authorAllDetail.documents = article_detail_promises.length
-
       if (authorAllDetail) {
         insertDataToDbScholar(authorAllDetail);
       }
@@ -190,7 +185,7 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
 
     await browser.close();
 
-    return { all: authorAllDetail, url_not_ready: url_not_ready };
+    return { all: authorAllDetail, url_not_ready: url_not_ready, num: authorAllDetail.documents };
   } catch (error) {
     url_author.message_error = "An error occurred: " + error;
     !linkError.includes(url_author) ? linkError.push(url_author) : null;
@@ -205,7 +200,7 @@ const getAuthorScholar = async (author_id) => {
   const all_id = author_id.split(",").map((e) => e.trim());
 
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({ headless: false });
 
     let authorAll = [];
     let url_not_ready = [];
@@ -265,7 +260,7 @@ const getAuthorScholar = async (author_id) => {
 const getArticleScholar = async (scholar_id) => {
 
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.setUserAgent(userAgent.random().toString());
 
@@ -290,7 +285,7 @@ const getArticleScholar = async (scholar_id) => {
       const batchSize = 50; // Set the desired batch size
 
       const article_detail_promises = [];
-
+      // console.log("content = ",content)
       for (let i = 0; i < content.length; i += batchSize) {
         // console.log(" i = ",i)
         const batch = content.slice(i, i + batchSize);
@@ -417,7 +412,7 @@ const check_src_image = async (html) => {
 const getGraph = async (url) => {
   try {
     let graph = [];
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.setUserAgent(userAgent.random().toString());
 
@@ -672,6 +667,16 @@ const getArticleDetail = async (html, url, scholar_id) => {
     return null;
   }
 };
+
+const requestToWebPage = async (url, page) => {
+  const response = await page.goto(url, { waitUntil: "networkidle2" });
+  if (response.ok) {
+    return page;
+  } else {
+    return "page not response ok";
+  }
+};
+
 
 const getAuthor = async (author) => {
   try {
