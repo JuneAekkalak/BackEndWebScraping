@@ -1,7 +1,6 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const portfinder = require('portfinder');
+// const portfinder = require('portfinder');
 
 const authorsRouter = require('./routes/authors');
 const articlesRouter = require('./routes/articles');
@@ -9,6 +8,8 @@ const scraperRouter = require('./routes/scraper');
 const articlesScopusRouter = require('./routes/articlesScopus');
 const authorsScopusRouter = require('./routes/authorsScopus');
 const journalRouter = require('./routes/journalScopus');
+const conectionDB = require('./routes/connection');
+const baseUrl = require('./routes/baseurl')
 
 const connectToMongoDB = require("./qurey/connectToMongoDB");
 (async () => {
@@ -16,7 +17,7 @@ const connectToMongoDB = require("./qurey/connectToMongoDB");
 })();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8000;
 //mongodb+srv://root:1234@db01.uyg1g.mongodb.net/test
 // wu-researcher wurisdb 
 // mongoose.connect('mongodb://adminwuris:wurisadmin@192.168.75.58:27017/', {
@@ -36,14 +37,20 @@ app.use('/scopus', authorsScopusRouter);
 app.use('/scopus', articlesScopusRouter);
 app.use('/scopus', journalRouter);
 app.use('/scraper', scraperRouter);
+app.use('/conectionDB', conectionDB);
+app.use('/baseurl', baseUrl);
 
-portfinder.getPort((err, port) => {
-  if (err) {
-    console.error(err);
-  } else {
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-    });
-  }
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
+
+// portfinder.getPort((err, port) => {
+//   if (err) {
+//     console.error(err);
+//   } else {
+//     app.listen(port, () => {
+//       console.log(`Server is running on port ${port}`);
+//     });
+//   }
+// });
 

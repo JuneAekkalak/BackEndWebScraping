@@ -1,7 +1,8 @@
 const Author = require('../../models/Author');
 const Article = require('../../models/Article');
 const AuthorScopus = require('../../models/AuthorScopus');
-const ArticleScopus = require('../../models/ArticleScopus.js');
+const ArticleScopus = require('../../models/ArticleScopus');
+const Coressponding = require('../../models/Corresponding');
 const Journal = require('../../models/journal.js');
 
 const { ObjectId } = require('mongodb');
@@ -160,7 +161,7 @@ const insertAuthorDataToDbScopus = async (data) => {
 };
 
 
-const insertArticleDataToDbScopus = async (data, author_name) => {
+const insertArticleDataToDbScopus = async (data, author_name, roundArticleScraping, batchSize) => {
   try {
     let scopus_id
     const articles = data.map((articleData) => {
@@ -169,8 +170,13 @@ const insertArticleDataToDbScopus = async (data, author_name) => {
         eid: articleData.eid,
         article_name: articleData.name,
         ...(articleData.hasOwnProperty('source_id') && { source_id: articleData.source_id }),
+        first_author: articleData.first_author,
         co_author: articleData.co_author,
-        corresponding: articleData.corresponding,
+        co_author_department: articleData.co_author_department,
+        // corresponding: articleData.corresponding,
+        volume: articleData.volume,
+        issue: articleData.issue,
+        pages: articleData.pages,
         document_type: articleData.document_type,
         source_type: articleData.source_type,
         issn: articleData.issn,
@@ -184,11 +190,9 @@ const insertArticleDataToDbScopus = async (data, author_name) => {
 
       return article;
     });
-
-
     await ArticleScopus.insertMany(articles);
 
-    console.log('\nArticles Data of | ' + author_name + ' saved successfully to MongoDB.\n');
+    console.log('\nArticles ' + (roundArticleScraping + Number(1)) + ' to ' + (roundArticleScraping + batchSize) + ' of | ' + author_name + ' saved successfully to MongoDB.');
     console.log("");
   } catch (error) {
     console.error('Error saving Articles data to MongoDB:', error);
@@ -197,9 +201,7 @@ const insertArticleDataToDbScopus = async (data, author_name) => {
 
 const insertDataToJournal = async (data, source_id) => {
   try {
-    const objectId = new ObjectId();
     const newJournal = new Journal({
-      _id: objectId,
       source_id: data.source_id,
       journal_name: data.journal_name,
       scopus_coverage_years: data.scopus_coverage_years,
@@ -221,16 +223,31 @@ const insertDataToJournal = async (data, source_id) => {
 };
 
 
+const insertDataToCoressponding = async (data) => {
+  try {
+    const newCoressponding = new Coressponding({
+      scopusEID: data.scopusEID,
+      corresAuthorID: data.corresAuthorID,
+      correspondingData: data.correspondingData,
+    });
+
+    await newCoressponding.save();
+    console.log("\nCoressponding Data | Scopus EID:", data.scopusEID, "saved successfully to MongoDB.\n");
+  } catch (error) {
+    console.error('Error saving data to MongoDB:', error);
+  }
+};
+
+
 const updateDataToJournal = async (data, source_id) => {
   const newData = data.map(item => {
     return {
-      year: item.year,
-      citation: item.citation,
+      cite: item.cite,
       category: item.category
     };
   });
-  // console.log('mynewdata');
-  // newData.forEach(item => console.log(item));
+  console.log('mynewdata : ', newData);
+
   try {
     const oldData = await Journal.findOne({ source_id });
 
@@ -239,7 +256,7 @@ const updateDataToJournal = async (data, source_id) => {
       return;
     }
     oldData.cite_source.push(...newData);
-    oldData.cite_source.sort((a, b) => b.year - a.year);
+    oldData.cite_source.sort((a, b) => b.cite.year - a.cite.year);
     await oldData.save();
 
     console.log("Journal Data | Source ID:", source_id, "updeted successfully to MongoDB.\n");
@@ -280,12 +297,6 @@ module.exports = {
   insertArticleDataToDbScopus,
   insertDataToJournal,
   updateDataToJournal,
-  updateDataToAuthor
+  updateDataToAuthor,
+  insertDataToCoressponding
 };
-
-// {
-//   category_name: item.category_name,
-//   sub_category: item.category[0].sub_category,
-//   rank: item.category[0].rank,
-//   percentile: item.category[0].percentile
-// }

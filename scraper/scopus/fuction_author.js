@@ -3,8 +3,9 @@ const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const { insertAuthorDataToDbScopus, updateDataToAuthor } = require("../insertToDb/insertToDb");
 const { getCountRecordInAuthor, hasScopusIdInAuthor, getOldAuthorData } = require("../../qurey/qurey_function");
-// const allURLs = require("../../json/scopus");
 const { readUrlScopusData } = require("../scopus/function_Json");
+// const allURLs = require("../../../json/scopus");
+const { getBaseURL } = require('../../qurey/baseURL')
 
 const batchSize = 3;
 let roundScraping = 0;
@@ -14,23 +15,29 @@ let linkError = [];
 
 const scraperAuthorScopus = async () => {
   try {
-    // const allURLs = await getURLScopus();
+    const baseAuthorUrl = getBaseURL();
+    // const allURLs = await readUrlScopusData()
+    const allURLs = await getURLScopus();
+
     //allURLs.length
-    const allURLs = await readUrlScopusData()
-    for (let i = roundScraping; i < allURLs.length; i += batchSize) {
+
+    for (let i = roundScraping; i < 3; i += batchSize) {
       const batchURLs = allURLs.slice(i, i + batchSize);
 
       roundScraping = i;
       console.log("\nRound Scraping : ", roundScraping, "\n");
-      const promises = batchURLs.map(async (url, index) => {
+      const promises = batchURLs.map(async (data, index) => {
         const i = roundScraping + index;
-        console.log(`Scraping Author ${i + 1} of ${allURLs.length}: ${url.name}`);
-        console.log(`URL: ${url.url}`);
-        const browser = await puppeteer.launch({ headless: false });
+        console.log(`Scraping Author ${i + 1} of ${allURLs.length}: ${data.name}`);
+        const scopusId = await getScopusID(data.url)
+        const author_url = `${baseAuthorUrl}${scopusId}`
+        console.log(`URL: ${author_url}`);
+
+        const browser = await puppeteer.launch({ headless: "new" });
         const page = await browser.newPage();
         try {
 
-          let author_data = await scrapeAuthorData(url.url, page);
+          let author_data = await scrapeAuthorData(author_url, page);
           for (const key in author_data) {
             if (author_data[key] === null || author_data[key] === "") {
               author_data = null
@@ -76,35 +83,43 @@ const scraperAuthorScopus = async () => {
             } else if (result.status === "rejected") {
               console.error("\nError occurred while scraping\n");
               await scraperAuthorScopus();
+              return
             }
           }
           roundScraping += batchSize;
         } else {
           console.log("!== batchsize")
           await scraperAuthorScopus();
+          return
         }
       } else {
         console.log("have author null")
         await scraperAuthorScopus();
+        return
       }
     }
+    let numScraping = allAuthors.length;
+    let error = linkError;
     roundScraping = 0;
     linkError = [];
-    allAuthors = []
-    return { message: "Finish Scraping Author Scopus", error: linkError, numScraping: allAuthors.length };
+    allAuthors = [];
+    return { message: "Finish Scraping Author Scopus", error: error, numScraping: numScraping };
+
   } catch (error) {
     console.error("\nError occurred while scraping\n", error);
-    return [];
+    await scraperAuthorScopus();
+    return
   };
 }
 
 const scraperOneAuthorScopus = async (scopus_id) => {
   try {
+    const baseAuthorUrl = getBaseURL();
     const allURLs = scopus_id.split(",").map(e => e.trim());
     console.log("allURLs =", allURLs);
 
     const scrapePromises = allURLs.map(async (id, index) => {
-      const url = `https://www.scopus.com/authid/detail.uri?authorId=${id}`;
+      const url = `${baseAuthorUrl}${id}`;
       // console.log(`Scopus ID: ${id}`);
       console.log(`Scraping Author (${index + 1}/${allURLs.length}): Scopus ID ${id}`);
       const browser = await puppeteer.launch({ headless: false });
@@ -149,7 +164,7 @@ const scrapeAuthorData = async (url, page) => {
   try {
     const response = await page.goto(url, { waitUntil: "networkidle2" });
     if (response.ok()) {
-      await page.waitForTimeout(1500)
+      await page.waitForTimeout(1700)
       await waitForElement("#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(2) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc")
       const html = await page.content();
       const $ = cheerio.load(html);
@@ -215,6 +230,7 @@ const getURLScopus = async () => {
     return null;
   }
 };
+
 
 const scrapCitation = async (url, page) => {
   try {
