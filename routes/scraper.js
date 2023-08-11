@@ -37,7 +37,7 @@ const { createLogFile, readUrlScholarData } = require("../scraper/scopus/functio
   await connectToMongoDB();
   await getOldAuthorData();
 })();
-const authorURL = require("../../json/scholar");
+
 const { getBaseURL } = require('../qurey/baseURL')
 // const allURLs = require("../scraper/json/scopus");
 

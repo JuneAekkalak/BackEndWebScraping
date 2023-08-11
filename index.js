@@ -10,6 +10,7 @@ const authorsScopusRouter = require('./routes/authorsScopus');
 const journalRouter = require('./routes/journalScopus');
 const conectionDB = require('./routes/connection');
 const baseUrl = require('./routes/baseurl')
+const corespondingRouter = require('./routes/corresponding')
 
 const connectToMongoDB = require("./qurey/connectToMongoDB");
 (async () => {
@@ -36,6 +37,7 @@ app.use('/scholar', articlesRouter);
 app.use('/scopus', authorsScopusRouter);
 app.use('/scopus', articlesScopusRouter);
 app.use('/scopus', journalRouter);
+app.use('/scopus', corespondingRouter);
 app.use('/scraper', scraperRouter);
 app.use('/conectionDB', conectionDB);
 app.use('/baseurl', baseUrl);

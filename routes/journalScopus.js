@@ -51,6 +51,21 @@ router.get('/journal/:source_id', async (req, res, next) => {
     }
 });
 
+router.get('/journal/citescore/:source_id', async (req, res, next) => {
+    try {
+        const { source_id } = req.params;
+        console.log(source_id)
+        const journal = await Journal.find({ 'source_id': source_id })
+            .select('source_id cite_source');
+        if (journal.length === 0) {
+            return res.status(404).json(false);
+        }
+        res.json(journal);
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.get('/journal/name/:journalName', (req, res, next) => {
     const { journalName } = req.params;
     const query = {};
