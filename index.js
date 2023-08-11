@@ -11,6 +11,7 @@ const journalRouter = require('./routes/journalScopus');
 const conectionDB = require('./routes/connection');
 const baseUrl = require('./routes/baseurl')
 const corespondingRouter = require('./routes/corresponding')
+const timeCron = require('./routes/setcron')
 
 const connectToMongoDB = require("./qurey/connectToMongoDB");
 (async () => {
@@ -41,6 +42,7 @@ app.use('/scopus', corespondingRouter);
 app.use('/scraper', scraperRouter);
 app.use('/conectionDB', conectionDB);
 app.use('/baseurl', baseUrl);
+app.use('/timecron', timeCron);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
