@@ -14,7 +14,7 @@ router.get('/author', async (req, res, next) => {
     if (sortField === 'h-index') {
       sortQuery.h_index = sortOrder === 'desc' ? -1 : 1;
     } else if (sortField === 'document-count') {
-      sortQuery.documents = sortOrder === 'desc' ? -1 : 1;
+      sortQuery.wu_documents = sortOrder === 'desc' ? -1 : 1;
     } else if (sortField === 'name') {
       sortQuery['author_name'] = sortOrder === 'desc' ? -1 : 1;
     }
@@ -22,11 +22,11 @@ router.get('/author', async (req, res, next) => {
     const authors = await Author.aggregate([
       {
         $addFields: {
-          documents: {
+          wu_documents: {
             $cond: {
-              if: { $eq: ['$documents', ''] },
+              if: { $eq: ['$wu_documents', ''] },
               then: 0,
-              else: { $toInt: '$documents' }
+              else: { $toInt: '$wu_documents' }
             }
           },
           h_index: {
