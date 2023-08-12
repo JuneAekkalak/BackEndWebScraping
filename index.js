@@ -13,7 +13,7 @@ const baseUrl = require('./routes/baseurl')
 const corespondingRouter = require('./routes/corresponding')
 const timeCron = require('./routes/setcron')
 
-const connectToMongoDB = require("./qurey/connectToMongoDB");
+const {connectToMongoDB} = require("./qurey/connectToMongoDB");
 (async () => {
   await connectToMongoDB();
 })();

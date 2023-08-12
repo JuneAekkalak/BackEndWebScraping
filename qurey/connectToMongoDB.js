@@ -1,45 +1,78 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 const fs = require('fs');
+const path = require('path');
 
 const setEnvValues = async (databaseURI) => {
   if (databaseURI) {
-    const envFilePath = '.env';
-    let envContent = fs.readFileSync(envFilePath, 'utf-8');
+    const envFilePath = path.join(__dirname, '..', 'config.json');
+    try {
+      let envContent = fs.readFileSync(envFilePath, 'utf-8');
+      const envConfig = JSON.parse(envContent);
 
-    envContent = envContent.replace(/DATABASE_URI=.*/, `DATABASE_URI=${databaseURI}`);
+      envConfig.DATABASE_URI = databaseURI;
+      fs.writeFileSync(envFilePath, JSON.stringify(envConfig, null, 2));
 
-    fs.writeFileSync(envFilePath, envContent);
-    process.env.DATABASE_URI = databaseURI; // อัพเดตค่าใน process.env
-    return databaseURI; // คืนค่าเป็น databaseURI ที่ถูก set
+      // process.env.DATABASE_URI = databaseURI; // อัพเดตค่าใน process.env
+      return envConfig.DATABASE_URI; // คืนค่าเป็น databaseURI ที่ถูก set
+    } catch (error) {
+      console.error('Error reading or writing config file:', error.message);
+      return null;
+    }
+  }
+};
+
+const getDBURL = () => {
+  const envFilePath = path.join(__dirname, '..', 'config.json');
+  try {
+    const envContent = fs.readFileSync(envFilePath, 'utf-8');
+    const envConfig = JSON.parse(envContent);
+    return envConfig.DATABASE_URI || null;
+  } catch (error) {
+    console.error('Error reading config file:', error.message);
+    return null;
+  }
+};
+
+const getDBName = () => {
+  const envFilePath = path.join(__dirname, '..', 'config.json');
+  try {
+    const envContent = fs.readFileSync(envFilePath, 'utf-8');
+    const envConfig = JSON.parse(envContent);
+    return envConfig.DB_NAME || null;
+  } catch (error) {
+    console.error('Error reading config file:', error.message);
+    return null;
   }
 };
 
 const connectToMongoDB = async (databaseURI) => {
-  const envDbName = process.env.DB_NAME;
-  let envDatabaseURI = process.env.DATABASE_URI;
+  let envDbName;
+  let envDatabaseURI;
 
   if (databaseURI) {
     envDatabaseURI = await setEnvValues(databaseURI);
+  } else {
+    envDbName = getDBName();
+    envDatabaseURI = getDBURL();
   }
 
-  console.log("envDatabaseURI ข้างนอก => ", envDatabaseURI);
-
   try {
-    // ปิดการเชื่อมต่อเดิมก่อนถึงจะเริ่มเชื่อมต่อใหม่
     await mongoose.disconnect();
 
-    // เริ่มเชื่อมต่อใหม่กับ connection string ใหม่
     await mongoose.connect(envDatabaseURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      dbName: envDbName
+      dbName: envDbName,
     });
 
     console.log('Connected to MongoDB');
-  } catch (err) {
-    console.error(err);
+    return true;
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
+    return false;
   }
 };
 
-module.exports = connectToMongoDB;
+
+module.exports = { connectToMongoDB, getDBURL };

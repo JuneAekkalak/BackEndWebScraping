@@ -1,0 +1,6 @@
+{
+  "DATABASE_URI": "mongodb+srv://root:1234@cluster0.l78dbvc.mongodb.net/test",
+  "DB_NAME": "wu-researcher",
+  "BASEURL": "https://www.scopus.com/authid/detail.uri?authorId=",
+  "SETCRON": "59 23 * * *"
+}

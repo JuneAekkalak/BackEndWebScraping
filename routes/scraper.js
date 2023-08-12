@@ -23,7 +23,7 @@ const {
 } = require("../qurey/qurey_function");
 const CronJob = require("cron").CronJob;
 const puppeteer = require("puppeteer");
-const connectToMongoDB = require("../qurey/connectToMongoDB");
+const {connectToMongoDB} = require("../qurey/connectToMongoDB");
 const {
   scraperArticleScopus,
   sourceID,
