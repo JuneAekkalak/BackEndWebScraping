@@ -28,11 +28,9 @@ const insertDataToDbScholar = async (data) => {
         await Promise.all(
           data.articles.map(async (article) => {
             if (article) {
-              // const existingArticle = await Article.findOne({ author_id: existingAuthor._id && article_id: article.article_id  });
               const existingArticle = await Article.findOne({ article_id: article.article_id, scholar_id: existingAuthor.scholar_id });
 
               if (existingArticle) {
-                // Update existing article 
                 existingArticle.set({
                   article_name: article.article_name,
                   authors: article.authors,
@@ -52,7 +50,6 @@ const insertDataToDbScholar = async (data) => {
 
                 await existingArticle.save();
               } else {
-                // Create a new article
                 const newArticle = new Article({
                   article_id: article.article_id,
                   article_name: article.article_name,
@@ -130,10 +127,6 @@ const insertDataToDbScholar = async (data) => {
   }
 };
 
-
-
-
-
 const insertAuthorDataToDbScopus = async (data) => {
   try {
     const objectId = new ObjectId();
@@ -173,7 +166,6 @@ const insertArticleDataToDbScopus = async (data, author_name, roundArticleScrapi
         first_author: articleData.first_author,
         co_author: articleData.co_author,
         co_author_department: articleData.co_author_department,
-        // corresponding: articleData.corresponding,
         volume: articleData.volume,
         issue: articleData.issue,
         pages: articleData.pages,
@@ -222,7 +214,6 @@ const insertDataToJournal = async (data, source_id) => {
   }
 };
 
-
 const insertDataToCoressponding = async (data) => {
   try {
     const newCoressponding = new Coressponding({
@@ -237,7 +228,6 @@ const insertDataToCoressponding = async (data) => {
     console.error('Error saving data to MongoDB:', error);
   }
 };
-
 
 const updateDataToJournal = async (data, source_id) => {
   const newData = data.map(item => {

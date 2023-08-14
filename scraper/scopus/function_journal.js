@@ -344,7 +344,6 @@ const scrapOneJournal = async (source_id) => {
           const page = await browser.newPage();
           const link = `https://www.scopus.com/sourceid/${journalItem}`;
           await page.goto(link, { waitUntil: "networkidle2" });
-          // await page.waitForTimeout(1600);
           await waitForElement(
             "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
           );
@@ -518,7 +517,6 @@ const scraperJournalData = async (source_id, numNewJournal, page, addJournal) =>
     }
   }
 };
-
 
 const dropDownOption = async (page) => {
   const dropdownSelector = 'select[name="year"]';

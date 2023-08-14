@@ -5,7 +5,6 @@ require('../../logFileGoogleScholar.json')
 
 const createLogFile = async (data, type) => {
   try {
-    // const logDirectory = 'C:/logFile';
     let logFilePath;
 
     if (type === 'scholar') {
@@ -36,44 +35,6 @@ const createLogFile = async (data, type) => {
     console.error('An error occurred while writing the file:', err);
   }
 };
-
-// const createLogFile = async (data, type) => {
-//   try {
-//     const logDirectory = 'C:/logFile';
-//     let logFilePath;
-
-//     if (type === 'scholar') {
-//       logFilePath = path.join(__dirname, '..', '..', 'logFileGoogleScholar.json');
-//     } else if (type === 'scopus') {
-//       logFilePath = path.join(__dirname, '..', '..', 'logFileScopus.json');
-//     }
-
-//     // if (!fs.existsSync(logDirectory)) {
-//     //   fs.mkdirSync(logDirectory, { recursive: true });
-//     // }
-
-//     let existingData = [];
-//     const existingJson = await fs.promises.readFile(logFilePath, 'utf8');
-//     existingData = JSON.parse(existingJson);
-//     // if (fs.existsSync(logFilePath)) {
-//     //   const existingJson = await fs.promises.readFile(logFilePath, 'utf8');
-//     //   existingData = JSON.parse(existingJson);
-//     // }
-
-//     const updatedData = [...existingData, data];
-//     const jsonData = JSON.stringify(updatedData, null, 2);
-
-//     await fs.promises.writeFile(logFilePath, jsonData, 'utf8');
-
-//     console.log('\n-----------------------------------------------------');
-//     console.log('JSON file has been successfully created.');
-//     console.log('Path: ', logFilePath);
-//     console.log('-----------------------------------------------------\n');
-//   } catch (err) {
-//     console.error('An error occurred while writing the file:', err);
-//   }
-// };
-
 
 const createJsonScourceID = async (data) => {
   try {

@@ -103,7 +103,7 @@ const scraperArticleScopus = async (recursive) => {
               oldNumDocInPage: oldNumDocInPage,
             };
             let article_data;
-            if (numArticleOfAuthor === 0 || checkRecursive) {
+            if (numArticleOfAuthor === 0 ) {
               checkFirst = true;
               const article = await scrapeArticleData(
                 author_url,
@@ -134,17 +134,10 @@ const scraperArticleScopus = async (recursive) => {
                 checkFirst: checkFirst,
                 author_name: data.name,
               };
-            } else if (numDocInPage > oldNumDocInPage) {
+            } else if ( (numDocInPage > oldNumDocInPage) && (oldNumDocInPage !== 0 && numDocInPage !== 0)) {
               checkUpdate = true;
-              //   if (numOldDocument === 0) {
-              //     numOldDocument = await getCountRecordInArticle();
-              //   }
-
               const numNewDoc = numDocInPage - oldNumDocInPage;
               checkNumDoc.numNewDoc = numNewDoc;
-
-              // await scraperArticlePageUpdate(scopusId, page);
-
               const article = await scrapeArticleData(
                 author_url,
                 page,
@@ -178,9 +171,6 @@ const scraperArticleScopus = async (recursive) => {
               };
             } else if (numDocInPage === oldNumDocInPage) {
               checkNotUpdate = true;
-              //   if (numOldDocument === 0) {
-              //     numOldDocument = await getCountRecordInArticle();
-              //   }
               console.log(
                 "\n--------------------------------------------------------------------------"
               );
@@ -190,9 +180,6 @@ const scraperArticleScopus = async (recursive) => {
               );
               console.log("Number Of Article In Web Page : ", numDocInPage);
               console.log("Number Of Article In Database : ", oldNumDocInPage);
-
-              // await scraperArticlePageUpdate(scopusId, page);
-
               return {
                 status: "fulfilled",
                 article: [],
@@ -473,7 +460,6 @@ const scraperOneArticleScopus = async (eid) => {
         await articlePage.goto(url, { waitUntil: "networkidle2" });
         const waitElement =
           "#affiliation-section > div > div > ul > li:nth-child(1) > span";
-        // await page.waitForTimeout(1600)
         await waitForElement(waitElement);
 
         const check = await checkArticleWU(articlePage);
@@ -872,7 +858,6 @@ const getArticleUrl = async (html, numNewDoc) => {
       "div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > div:nth-child(2) > ul > li";
     const content = $(selector);
     let loopContent = numNewDoc > 0 ? numNewDoc : content.length;
-    // console.log("loopContent =", loopContent);
 
     const url_data = [];
     for (let i = 0; i < loopContent; i++) {
@@ -913,8 +898,6 @@ const scraperCoressId = async (page, index, coAuthor) => {
 
     if (coAuthor.hasAdditional) {
       if (index < coAuthor.last_index) {
-        // console.log("index : ",index)
-        // console.log("coAuthor.last_index : ",coAuthor.last_index)
         console.log("index > coAuthor.last_index");
         selector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > ul > li:nth-child(${index + 1
           }) > button`;
@@ -1001,8 +984,6 @@ const scraperCorresponding = async (page, html, coAuthor) => {
         words = author.replace(".", "").split(" ");
       }
       newString = words[0] + ", " + words[1].charAt(0);
-      // console.log("newPartialString  : ", newPartialString.toLocaleUpperCase());
-      // console.log("newString : ", newString.toLocaleUpperCase());
 
       return (
         newPartialString.toLocaleUpperCase() === newString.toLocaleUpperCase()
@@ -1178,7 +1159,6 @@ const getSourceID = async (page) => {
           .split("/")[2];
 
         if (checkUpdate) {
-          // update
           if (!(await checkHasSourceId(source_id))) {
             console.error("\n------------------------------------------------------");
             console.error("---- Add New Journal Of Source ID : ", source_id, " ----");
@@ -1191,7 +1171,6 @@ const getSourceID = async (page) => {
             await waitForElement(
               "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
             );
-            // const data = await scraperJournalData(source_id, 0, page);
             const data = await scraperJournalData(
               source_id,
               0,
@@ -1215,7 +1194,6 @@ const getSourceID = async (page) => {
         }
         return source_id;
       } else {
-        // console.log("Element does not have ViewFullSource");
         return null;
       }
     } else {
