@@ -13,8 +13,7 @@ const setEnvValues = async (databaseURI) => {
       envConfig.DATABASE_URI = databaseURI;
       fs.writeFileSync(envFilePath, JSON.stringify(envConfig, null, 2));
 
-      // process.env.DATABASE_URI = databaseURI; // อัพเดตค่าใน process.env
-      return envConfig.DATABASE_URI; // คืนค่าเป็น databaseURI ที่ถูก set
+      return envConfig.DATABASE_URI;
     } catch (error) {
       console.error('Error reading or writing config file:', error.message);
       return null;
@@ -56,7 +55,7 @@ const connectToMongoDB = async (databaseURI) => {
     envDbName = getDBName();
     envDatabaseURI = getDBURL();
   }
-
+  
   try {
     await mongoose.disconnect();
 

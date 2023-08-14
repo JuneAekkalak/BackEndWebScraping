@@ -6,7 +6,9 @@ router.use(express.json());
 
 router.post('/setUrl', async (req, res, next) => {
   const { baseURL } = req.body;
+  console.log("aaaa",baseURL);
   setEnvValues(baseURL)
+
 
   res.json({
     message: 'Suceesfull',

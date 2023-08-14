@@ -1,6 +1,5 @@
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
-const { getURLScopus } = require("./fuction_author");
 const {
   insertArticleDataToDbScopus,
   insertDataToJournal,
@@ -8,21 +7,26 @@ const {
 } = require("../insertToDb/insertToDb");
 const {
   getOldNumDocInPage,
-  getOldAuthorData,
   getNumArticleOfAuthorInDB,
   checkHasSourceId,
   getArticleOfAuthorNotPage,
-  addCountDocumenInWu,
+  addCountDocumentInWu,
   getCountRecordInArticle,
   getCountRecordInJournal,
   getOldNumArticleInWU,
   addFieldPageArticle,
   hasSourceEID,
+  hasEidOfAuthor,
+  pushLogScraping,
 } = require("../../qurey/qurey_function");
-const { scraperJournalData, scrapJournal } = require("./function_journal");
-// const allURLs = require("../../../json/scopus");
-const { readUrlScopusData } = require("./function_Json");
-const { getBaseURL } = require('../../qurey/baseURL')
+const {
+  scraperJournalData,
+  scrapJournal,
+  getLogJournalScraping,
+  resetVariableJournal,
+} = require("./function_journal");
+const { getBaseURL } = require("../../qurey/baseURL");
+const getAllScopusAuthIDs = require("./getScopusIdFromApi");
 
 const batchSize = 3;
 let roundScraping = 0;
@@ -33,18 +37,33 @@ let checkFirst;
 let errorURLs = [];
 let sourceID = [];
 let linkError = [];
+let checkAddArtilce = false;
+let checkScrapingFirst = false;
+let checkAddSourceId = false;
+let numOldDocument = 0;
 
-const scraperArticleScopus = async () => {
+const scraperArticleScopus = async (recursive) => {
   try {
     const baseAuthorUrl = getBaseURL();
-    await getOldAuthorData();
+    let allURLs = await getAllScopusAuthIDs();
+    allURLs = allURLs.slice(0, 5);
 
-    // const allURLs = await readUrlScopusData();
-    const allURLs = await getURLScopus();
+    if (numOldDocument === 0) {
+      numOldDocument = await getCountRecordInArticle();
+    }
+
+    let numRecordArticle = await getCountRecordInArticle();
+    if (numRecordArticle === 0) {
+      checkScrapingFirst = true;
+    }
+    let checkRecursive = false;
+    if (typeof recursive !== "undefined") {
+      checkRecursive = true;
+    }
 
     //allURLs.length
-    while (roundScraping < 3) {
-      console.log("\nRound Scraping : ", roundScraping, "\n");
+    while (roundScraping < allURLs.length) {
+      console.log("\nRound Article Scraping : ", roundScraping, "\n");
       const batchURLs = allURLs.slice(roundScraping, roundScraping + batchSize);
 
       const batchPromises = batchURLs.map(async (data, index) => {
@@ -59,7 +78,7 @@ const scraperArticleScopus = async () => {
             `Scraping Author ${roundScraping + index + 1} of ${allURLs.length
             }: ${data.name}`
           );
-          const scopusId = await getScopusID(data.url);
+          const scopusId = data.scopus_id;
           const author_url = `${baseAuthorUrl}${scopusId}`;
           console.log(`URL: ${author_url}`);
 
@@ -84,7 +103,7 @@ const scraperArticleScopus = async () => {
               oldNumDocInPage: oldNumDocInPage,
             };
             let article_data;
-            if (numArticleOfAuthor === 0) {
+            if (numArticleOfAuthor === 0 || checkRecursive) {
               checkFirst = true;
               const article = await scrapeArticleData(
                 author_url,
@@ -97,8 +116,16 @@ const scraperArticleScopus = async () => {
                 scopusId,
                 false
               );
-              article_data = article.article;
-              allArticle = allArticle.concat(article_data);
+              if (typeof article !== "undefined") {
+                if (article !== null && article.hasOwnProperty("article")) {
+                  article_data = article.article;
+                  allArticle = allArticle.concat(article_data);
+                } else {
+                  article_data = null;
+                }
+              } else {
+                article_data = null;
+              }
 
               return {
                 status: "fulfilled",
@@ -107,12 +134,16 @@ const scraperArticleScopus = async () => {
                 checkFirst: checkFirst,
                 author_name: data.name,
               };
-            } else if (numDocInPage !== oldNumDocInPage) {
+            } else if (numDocInPage > oldNumDocInPage) {
               checkUpdate = true;
+              //   if (numOldDocument === 0) {
+              //     numOldDocument = await getCountRecordInArticle();
+              //   }
+
               const numNewDoc = numDocInPage - oldNumDocInPage;
               checkNumDoc.numNewDoc = numNewDoc;
 
-              await scraperArticlePageUpdate(scopusId, page);
+              // await scraperArticlePageUpdate(scopusId, page);
 
               const article = await scrapeArticleData(
                 author_url,
@@ -122,12 +153,20 @@ const scraperArticleScopus = async () => {
                 checkNumDoc,
                 numDocInPage,
                 (checkFirst = false),
-                scopusId
+                scopusId,
+                false
               );
 
-              article_data = article.article;
-              allArticle = allArticle.concat(article_data);
-              // allArticle.push(article_data);
+              if (typeof article !== "undefined") {
+                if (article !== null && article.hasOwnProperty("article")) {
+                  article_data = article.article;
+                  allArticle = allArticle.concat(article_data);
+                } else {
+                  article_data = null;
+                }
+              } else {
+                article_data = null;
+              }
 
               return {
                 status: "fulfilled",
@@ -139,17 +178,20 @@ const scraperArticleScopus = async () => {
               };
             } else if (numDocInPage === oldNumDocInPage) {
               checkNotUpdate = true;
+              //   if (numOldDocument === 0) {
+              //     numOldDocument = await getCountRecordInArticle();
+              //   }
               console.log(
-                "\n-----------------------------------------------------"
+                "\n--------------------------------------------------------------------------"
               );
               console.log("Article Of ", data.name, " is not update.");
               console.log(
-                "-----------------------------------------------------"
+                "--------------------------------------------------------------------------"
               );
               console.log("Number Of Article In Web Page : ", numDocInPage);
               console.log("Number Of Article In Database : ", oldNumDocInPage);
 
-              await scraperArticlePageUpdate(scopusId, page);
+              // await scraperArticlePageUpdate(scopusId, page);
 
               return {
                 status: "fulfilled",
@@ -163,7 +205,7 @@ const scraperArticleScopus = async () => {
             linkError.push({ name: data.name, url: author_url });
           }
         } catch (error) {
-          console.error("\nError occurred while scraping\n", error);
+          console.error("\nError occurred while scraping : ", error);
           return { status: "rejected" };
         } finally {
           await browser.close();
@@ -191,33 +233,34 @@ const scraperArticleScopus = async () => {
             if (result.status === "fulfilled") {
               const data = result.value;
               if (data.article.length !== 0 || data.checkUpdate) {
+                checkAddArtilce = true;
               } else if (data.checkNotUpdate) {
                 continue;
               } else {
                 console.log("------ Array 0 --------");
               }
             } else if (result.status === "rejected") {
-              console.error("\nError occurred while scraping\n", error);
-              await scraperArticleScopus();
+              console.error("\nError occurred while scraping : ", error);
+              await scraperArticleScopus(true);
               return;
             }
           }
           if (
-            // เปลี่ยนเป็นเช็คว่าถ้า source มี source id ที่่ ใหม่ ไม่ซ่ำ ส่งไปสกัด
             sourceID.length > 0 &&
-            (await getCountRecordInArticle()) > 0 &&
+            checkFirst &&
             (await getCountRecordInJournal()) > 0
           ) {
+            console.log("เข้า ---");
             await scrapJournal(sourceID);
           }
         } else {
           console.log("!== batchsize");
-          await scraperArticleScopus();
+          await scraperArticleScopus(true);
           return;
         }
       } else {
         console.log("have author null");
-        await scraperArticleScopus();
+        await scraperArticleScopus(true);
         return;
       }
 
@@ -227,21 +270,70 @@ const scraperArticleScopus = async () => {
       }
       roundScraping += batchSize;
     }
-    let numScraping = allArticle.length;
+    let numScrapingArticle = 0;
+
+    if (checkScrapingFirst) {
+      numScrapingArticle = await getCountRecordInArticle();
+    } else if (!checkScrapingFirst) {
+      const doc = (await getCountRecordInArticle()) - Number(numOldDocument);
+      numScrapingArticle = Math.abs(doc);
+    }
+
     let error = linkError;
+
+    const logScraping = {
+      message: "Scraping Article Data For Scopus Completed Successfully.",
+      numArticleScraping: numScrapingArticle,
+    };
+    pushLogScraping(logScraping, "article");
+    console.log(
+      "\n-------------------------------------------------------------------------------------------"
+    );
+    console.log("Finsh Scraping Article Data : ", logScraping);
+    console.log(
+      "-------------------------------------------------------------------------------------------\n"
+    );
+
+    if (!checkScrapingFirst && checkAddArtilce && checkAddSourceId) {
+      const { addJournalData, updateCiteScoreYear, journal } =
+        await getLogJournalScraping();
+      if (addJournalData.length > 0 && journal.length > 0) {
+        numScraping = journal.length + addJournalData.length;
+      } else if (addJournalData.length > 0) {
+        numScraping = addJournalData.length;
+      } else if (journal.length > 0) {
+        numScraping = journal.length;
+      }
+      const logJournal = {
+        message: "Scraping Journal Data For Scopus Completed Successfully.",
+        numJournalScraping: numScraping,
+        numUpdateCiteScoreYear: updateCiteScoreYear.length,
+      };
+
+      pushLogScraping(logJournal, "journal");
+      console.log(
+        "\n---------------------------------------------------------------------------------------------"
+      );
+      console.log("Update Scraping journal Data : ", logJournal);
+      console.log(
+        "---------------------------------------------------------------------------------------------\n"
+      );
+    }
+    resetVariableJournal();
+    checkAddArtilce = false;
+    checkScrapingFirst = false;
+    checkAddSourceId = false;
     roundScraping = 0;
     allArticle = [];
     errorURLs = [];
     sourceID = [];
     linkError = [];
-    return {
-      message: "Finish Scraping Article Scopus",
-      error: error,
-      numScraping: numScraping,
-    };
+    numOldDocument = 0;
+
+    return logScraping;
   } catch (error) {
-    console.error("\nError occurred while scraping\n", error);
-    await scraperArticleScopus();
+    console.error("\nError occurred while scraping : ", error);
+    await scraperArticleScopus(true);
     return null;
   }
 };
@@ -274,7 +366,6 @@ const scraperArticlePageUpdate = async (scopus_id, page) => {
     );
     let roundArticleScraping = 0;
     const batchSize = 7;
-    // let articleCount = 0;
     for (
       let i = roundArticleScraping;
       i < link_Article.length;
@@ -288,7 +379,6 @@ const scraperArticlePageUpdate = async (scopus_id, page) => {
           await articlePage.goto(article_url, { waitUntil: "networkidle2" });
           const html = await articlePage.content();
           const $ = cheerio.load(html);
-          // console.log("Article |",i,"| This Article EID : ",await getE_Id(article_url));
           const detail1 = $(
             "#doc-details-page-container > article > div:nth-child(1) > div > div > span:nth-child(2)"
           )
@@ -330,7 +420,7 @@ const scraperArticlePageUpdate = async (scopus_id, page) => {
           }
           await articlePage.close();
         } catch (error) {
-          console.error("\nError occurred while scraping\n", error);
+          console.error("\nError occurred while scraping : ", error);
           await articlePage.close();
         }
       });
@@ -338,7 +428,7 @@ const scraperArticlePageUpdate = async (scopus_id, page) => {
       await Promise.all(promises);
     }
   } catch (error) {
-    console.error("\nError occurred while scraping\n", error);
+    console.error("\nError occurred while scraping : ", error);
   }
 };
 
@@ -387,19 +477,13 @@ const scraperOneArticleScopus = async (eid) => {
         await waitForElement(waitElement);
 
         const check = await checkArticleWU(articlePage);
-
-        if (check.status) {
-          const article_data = await getArticleDetail(
-            articlePage,
-            url,
-            check.department
-          );
-          await articlePage.close();
-          return article_data;
-        } else {
-          await articlePage.close();
-          return null;
-        }
+        const article_data = await getArticleDetail(
+          articlePage,
+          url,
+          check.department
+        );
+        await articlePage.close();
+        return article_data;
       });
 
       const results = await Promise.allSettled(promises);
@@ -425,7 +509,7 @@ const getDocumentInpage = async (html) => {
 
     return Number(numDoc);
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
@@ -457,7 +541,7 @@ const checkArticleWU = async (page) => {
       department.push($(this).text().trim());
     });
 
-    const found = affiliationText
+    let found = affiliationText
       .toLowerCase()
       .includes(searchString.toLowerCase());
 
@@ -466,7 +550,7 @@ const checkArticleWU = async (page) => {
       department: found ? department : undefined,
     };
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
@@ -487,7 +571,7 @@ const scrapeArticlesBatch = async (
   let lengthArticle = numNewDoc === 0 ? link_Article.length : numNewDoc;
   let sizeLoop = numNewDoc < batchSize && numNewDoc > 0 ? numNewDoc : batchSize;
   let articleCount = 0;
-  // roundArticleScraping = 105
+
   for (let i = roundArticleScraping; i < lengthArticle; i += sizeLoop) {
     const article = [];
     roundArticleScraping = i;
@@ -498,12 +582,13 @@ const scrapeArticlesBatch = async (
         const articlePage = await page.browser().newPage();
         await Promise.all([
           articlePage.goto(article_url, { waitUntil: "networkidle2" }),
-          articlePage.waitForTimeout(1600),
+          articlePage.waitForTimeout(1700),
           waitForElement("#source-preview-flyout"),
           waitForElement("#affiliation-section > div > div > ul > li > span"),
         ]);
 
         const check = await checkArticleWU(articlePage);
+        const eid = await getE_Id(article_url);
         articleCount++;
         if (numNewDoc === 0) {
           if (check.status) {
@@ -511,14 +596,14 @@ const scrapeArticlesBatch = async (
               "Article |",
               articleCount,
               "| This Article EID : ",
-              await getE_Id(article_url)
+              eid
             );
           } else {
             console.log(
               "Article |",
               articleCount,
               "| This Article EID : ",
-              await getE_Id(article_url),
+              eid,
               " does not belong to the Walailak Department."
             );
           }
@@ -527,7 +612,7 @@ const scrapeArticlesBatch = async (
             "Article |",
             articleCount,
             "| Add New Article EID : ",
-            await getE_Id(article_url),
+            eid,
             " of ",
             author_name
           );
@@ -538,8 +623,13 @@ const scrapeArticlesBatch = async (
           articlePage.close();
           return { article: {}, status: "skip" };
         }
+        const scopus_id = await getScopusID(url);
+        const hasEidAuthor = await hasEidOfAuthor(eid, scopus_id);
 
-        if (check.status) {
+        if (
+          check.status &&
+          (typeof oneArticle === "undefined" || hasEidAuthor === false)
+        ) {
           const article_data = await getArticleDetail(
             articlePage,
             article_url,
@@ -554,9 +644,9 @@ const scrapeArticlesBatch = async (
           return { article: {}, status: "skip" };
         }
       } catch (error) {
-        console.error("Failed to scrape article:", error);
+        console.error("Failed to scrape article ");
         articlePage.close();
-        return null;
+        return { article: null };
       }
     });
 
@@ -580,6 +670,7 @@ const scrapeArticlesBatch = async (
           }
         })
       );
+
       if (article.length > 0 && oneArticle === false) {
         await insertArticleDataToDbScopus(
           article,
@@ -641,34 +732,70 @@ const scrapeArticleData = async (
     await page.waitForSelector("#documents");
     await page.click("#documents");
     let html;
-
-    if (numNewDoc == 0) {
-      if (numDocInPage > 10) {
-        const waitElement2 =
-          "#documents-panel > div > div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > els-paginator > nav > els-select > div > label";
-        await waitForElement(waitElement2);
-        const waitElement3 =
-          "#documents-panel > div > div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > els-paginator > nav > els-select > div > label > select";
-        await page.select(waitElement3, "200");
-        await page.waitForTimeout(1500);
-      }
-    }
+    let link_Article = [];
 
     const waitElement1 =
       "#documents-panel > div > div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > div:nth-child(2) > ul > li:nth-child(1) > div > div.col-lg-21.col-md-18.col-xs-18 > div.list-title.margin-size-24-t.margin-size-0-b.text-width-32 > h4 > a > span > span";
-
     await waitForElement(waitElement1);
-    html = await page.content();
+    if (numNewDoc === 0) {
+      html = await page.content();
+      if (oneArticle !== false) {
+        numDocInPage = await getDocumentInpage(html);
+      }
+      if (numDocInPage <= 10) {
+        link_Article = await getArticleUrl(html, numNewDoc);
+      } else {
+        const waitElement2 =
+          "#documents-panel > div > div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > els-paginator > nav > els-select > div > label";
+        await waitForElement(waitElement2);
 
-    let link_Article = await getArticleUrl(html, numNewDoc);
+        const waitElement3 =
+          "#documents-panel > div > div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > els-paginator > nav > els-select > div > label > select";
+        await page.select(waitElement3, "200");
+        await page.waitForTimeout(1750);
+
+        await waitForElement(waitElement1);
+        html = await page.content();
+        link_Article = await getArticleUrl(html, numNewDoc);
+
+        console.log("numDocInPage  : ", numDocInPage);
+
+        while (
+          await page.$eval(
+            "#documents-panel > div > div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > els-paginator > nav > ul > li:last-child > button",
+            (button) => !button.disabled
+          )
+        ) {
+          await page.click(
+            "#documents-panel > div > div.Columns-module__FxWfo > div:nth-child(2) > div > els-results-layout > els-paginator > nav > ul > li:last-child > button"
+          );
+          await page.waitForTimeout(1750);
+          await waitForElement(waitElement1);
+          html = await page.content();
+          link_Article = link_Article.concat(
+            await getArticleUrl(html, numNewDoc)
+          );
+        }
+      }
+    } else {
+      await waitForElement(waitElement1);
+      html = await page.content();
+      link_Article = await getArticleUrl(html, numNewDoc);
+    }
+
+    console.log("link_Article : ", link_Article.length);
 
     if (link_Article.length === 0) {
-      console.log("Catch 1111 **");
+      console.log("Link Article is not data");
     } else {
       if (checkFirst) {
-        console.log("\n------------------------------------------");
-        console.log("First Scraping | ", author_name);
-        console.log("------------------------------------------");
+        console.log(
+          "\n---------------------------------------------------------------------------------"
+        );
+        console.log("First Scraping Article Of | ", author_name);
+        console.log(
+          "---------------------------------------------------------------------------------"
+        );
         console.log(
           "\nNumber of Articles In scopus of ",
           author_name,
@@ -676,9 +803,13 @@ const scrapeArticleData = async (
           link_Article.length
         );
       } else if (checkUpdate) {
-        console.log("\n----------------------------------------------");
+        console.log(
+          "\n-------------------------------------------------------------------------------------"
+        );
         console.log("Scraping Add New Article of ", author_name);
-        console.log("----------------------------------------------");
+        console.log(
+          "-------------------------------------------------------------------------------------"
+        );
         console.log(
           "Number Of Article In Web Page : ",
           checkNumDoc.numDocInPage
@@ -704,7 +835,7 @@ const scrapeArticleData = async (
       );
 
       if (checkFirst) {
-        await addCountDocumenInWu(
+        await addCountDocumentInWu(
           scopus_id,
           article_detail.length,
           author_name
@@ -712,14 +843,13 @@ const scrapeArticleData = async (
       } else {
         const articleInWU =
           Number(await getOldNumArticleInWU(scopus_id)) + article_detail.length;
-        await addCountDocumenInWu(scopus_id, articleInWU, author_name);
+        await addCountDocumentInWu(scopus_id, articleInWU, author_name);
       }
 
       return { article: article_detail, link_not_wu: link_not_wu };
     }
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
-    console.error("---- Article Error ----", error);
+    console.error("\nError occurred while scraping : ", error);
     return { article: null, link_not_wu: null };
   }
 };
@@ -730,7 +860,7 @@ const getScopusID = async (url) => {
     const scopusID = match.match(/=(\d+)/)[1];
     return scopusID;
   } catch (error) {
-    console.error("\nError occurred while scraping\n", error);
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
@@ -752,7 +882,7 @@ const getArticleUrl = async (html, numNewDoc) => {
 
     return url_data;
   } catch (error) {
-    console.error("Error occurred while scraping:", error);
+    console.error("Error occurred while scraping : ", error);
     return null;
   }
 };
@@ -768,22 +898,35 @@ const getE_Id = async (url) => {
       return "";
     }
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
 
-const scraperCoressId = async (page, url, index, coAuthor) => {
+const scraperCoressId = async (page, index, coAuthor) => {
   try {
     let selector;
     let dataSelector;
     let exit;
     const elseIndexNum = index - coAuthor.last_index;
     const elseIndex = Math.abs(elseIndexNum) + 1;
+
     if (coAuthor.hasAdditional) {
-      selector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > els-collapsible-panel-v2 > section > div > div > ul > li:nth-child(${elseIndex}) > button`;
-      dataSelector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > els-collapsible-panel-v2 > section > div > div > ul > li:nth-child(${elseIndex}) > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > a`;
-      exit = `#doc-details-page-container > article > div:nth-child(2) > section > div:nth-child(2) > div > els-collapsible-panel-v2 > section > div > div > ul > li:nth-child(${elseIndex}) > div > div > div > div > header > div > button`;
+      if (index < coAuthor.last_index) {
+        // console.log("index : ",index)
+        // console.log("coAuthor.last_index : ",coAuthor.last_index)
+        console.log("index > coAuthor.last_index");
+        selector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > ul > li:nth-child(${index + 1
+          }) > button`;
+        dataSelector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > ul > li:nth-child(${index + 1
+          }) > div > div > div > div > div > div > div > div:nth-child(2) > div > a`;
+        exit = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > ul > li:nth-child(${index + 1
+          }) > div > div > div > div > header > div > button`;
+      } else {
+        selector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > els-collapsible-panel-v2 > section > div > div > ul > li:nth-child(${elseIndex}) > button`;
+        dataSelector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > els-collapsible-panel-v2 > section > div > div > ul > li:nth-child(${elseIndex}) > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > a`;
+        exit = `#doc-details-page-container > article > div:nth-child(2) > section > div:nth-child(2) > div > els-collapsible-panel-v2 > section > div > div > ul > li:nth-child(${elseIndex}) > div > div > div > div > header > div > button`;
+      }
     } else {
       selector = `#doc-details-page-container > article > div:nth-child(2) > section > div > div > ul > li:nth-child(${index + 1
         }) > button`;
@@ -794,22 +937,22 @@ const scraperCoressId = async (page, url, index, coAuthor) => {
     }
 
     await page.click(selector);
-    await page.waitForTimeout(850);
+    await page.waitForTimeout(1000);
     await waitForElement(exit);
     const html = await page.content();
     await page.click(exit);
-    await page.waitForTimeout(850);
+    await page.waitForTimeout(1000);
 
     const $ = cheerio.load(html);
     const scopus_url = $(dataSelector).attr("href");
     const scopus_id = await getScopusID(scopus_url);
     return scopus_id;
   } catch (error) {
-    console.error("An error occurred:", error);
+    console.error("An error occurred: ", error);
   }
 };
 
-const scraperCorresponding = async (page, html, coAuthor, url) => {
+const scraperCorresponding = async (page, html, coAuthor) => {
   let $ = cheerio.load(html);
   const pattern = /©.*$/s;
   let data = $("p.corrAuthSect").text().trim().replace(pattern, "");
@@ -839,19 +982,36 @@ const scraperCorresponding = async (page, html, coAuthor, url) => {
     const semicolonSplit = str.split(";");
     const corresName = semicolonSplit[0].trim();
     const address = semicolonSplit[1].trim();
-    const email = emails[index];
+    let email = emails[index];
 
-    const partialString = corresName.replace(".", "");
+    if (typeof email === "undefined") {
+      email = "";
+    }
+
     const n = coAuthor.data.findIndex((author) => {
-      // console.log("partialString : ", partialString);
-      // console.log("author : ", author);
-      return author.includes(partialString);
-    });
+      let words;
+      let partialString = corresName.replace(".", "").split(", ");
+      let newPartialString =
+        partialString[0] + ", " + partialString[1].charAt(0);
 
+      let newString;
+      if (author.includes(", ")) {
+        words = author.split(", ");
+      } else if (author.includes(" ")) {
+        words = author.replace(".", "").split(" ");
+      }
+      newString = words[0] + ", " + words[1].charAt(0);
+      // console.log("newPartialString  : ", newPartialString.toLocaleUpperCase());
+      // console.log("newString : ", newString.toLocaleUpperCase());
+
+      return (
+        newPartialString.toLocaleUpperCase() === newString.toLocaleUpperCase()
+      );
+    });
 
     if (n !== -1) {
       const corresFullName = coAuthor.data[n].replace("*", "").trim();
-      const authorID = await scraperCoressId(page, url, n, coAuthor);
+      const authorID = await scraperCoressId(page, n, coAuthor);
       const corresponding = {
         corresName: corresName,
         corresFullName: corresFullName,
@@ -886,7 +1046,7 @@ const getArticleDetail = async (
 
     const eid = await getE_Id(url);
     const coAuthor = await scrapCo_Author(page);
-    const corresponding = {}
+    const corresponding = {};
     corresponding.scopusEID = eid;
     const data = await scraperCorresponding(page, html, coAuthor, url);
     corresponding.corresAuthorID = data.corresAuthorID;
@@ -895,10 +1055,15 @@ const getArticleDetail = async (
     const check = await hasSourceEID(eid);
     const source_id = await getSourceID(page);
     const check_journal = source_id ? true : false;
-    //if(!check && oneArticle === false)
+
     if (!check && oneArticle === false) {
-      if (corresponding.corresAuthorID.length > 0 && corresponding.correspondingData.length > 0) {
+      if (
+        corresponding.corresAuthorID.length > 0 &&
+        corresponding.correspondingData.length > 0
+      ) {
         await insertDataToCoressponding(corresponding);
+      } else {
+        console.log("-- Not Have Corresponding Of EID : ", eid);
       }
     }
 
@@ -987,7 +1152,7 @@ const getArticleDetail = async (
     article_data.author_scopus_id = author_scopus_id;
     return article_data;
   } catch (error) {
-    console.error("\nError occurred while scraping\n", error);
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
@@ -1015,9 +1180,9 @@ const getSourceID = async (page) => {
         if (checkUpdate) {
           // update
           if (!(await checkHasSourceId(source_id))) {
-            console.error("\n-------------------------");
-            console.error("---- Add New Journal ----");
-            console.error("-------------------------\n");
+            console.error("\n------------------------------------------------------");
+            console.error("---- Add New Journal Of Source ID : ", source_id, " ----");
+            console.error("------------------------------------------------------\n");
             const browser = await puppeteer.launch({ headless: "new" });
             const page = await browser.newPage();
             const link = `https://www.scopus.com/sourceid/${source_id}`;
@@ -1026,9 +1191,16 @@ const getSourceID = async (page) => {
             await waitForElement(
               "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
             );
-            const data = await scraperJournalData(source_id, 0, page);
+            // const data = await scraperJournalData(source_id, 0, page);
+            const data = await scraperJournalData(
+              source_id,
+              0,
+              page,
+              "addJournalNewArticle"
+            );
             await browser.close();
             await insertDataToJournal(data, source_id);
+            checkAddSourceId = true;
           } else {
             console.log(
               "\n---- Journal Data | Source ID: ",
@@ -1050,7 +1222,7 @@ const getSourceID = async (page) => {
       return null;
     }
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
@@ -1091,7 +1263,7 @@ const scrapCo_Author = async (page) => {
       hasAdditional: hasAdditional,
     };
   } catch (error) {
-    console.error("\nError occurred while scraping\n , ", error);
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
@@ -1109,15 +1281,13 @@ const scrapAuthorKeyword = async (html) => {
     });
     return author_keyword;
   } catch (error) {
-    console.error("\nError occurred while scraping\n");
+    console.error("\nError occurred while scraping : ", error);
     return null;
   }
 };
 
 module.exports = {
   scraperArticleScopus,
-  sourceID,
-  errorURLs,
   getArticleUrl,
   scraperOneArticleScopus,
   scrapeArticleData,

@@ -1,26 +1,96 @@
 const fs = require('fs');
 const path = require('path');
 const filePath = '../../../numDoc/numDocInWalailak.json';
+require('../../logFileGoogleScholar.json')
 
-const createLogFile = async (data) => {
+const createLogFile = async (data, type) => {
   try {
-    const logDirectory = 'C:/logFile';
-    const logFilePath = path.join(logDirectory, 'logFileGoogleScholar.json');
+    // const logDirectory = 'C:/logFile';
+    let logFilePath;
 
-    // Create the directory if it doesn't exist
-    if (!fs.existsSync(logDirectory)) {
-      fs.mkdirSync(logDirectory, { recursive: true });
+    if (type === 'scholar') {
+      logFilePath = path.join(__dirname, '..', '..', 'logFileGoogleScholar.json');
+    } else if (type === 'scopus') {
+      logFilePath = path.join(__dirname, '..', '..', 'logFileScopus.json');
     }
 
-    const jsonData = JSON.stringify(data, null, 2);
+    let existingData = [];
+
+    try {
+      const existingJson = await fs.promises.readFile(logFilePath, 'utf8');
+      existingData = JSON.parse(existingJson);
+    } catch (readError) {
+      console.error('Error reading existing JSON:', readError);
+    }
+
+    const updatedData = [...existingData, data];
+    const jsonData = JSON.stringify(updatedData, null, 2);
 
     await fs.promises.writeFile(logFilePath, jsonData, 'utf8');
+
     console.log('\n-----------------------------------------------------');
     console.log('JSON file has been successfully created.');
     console.log('Path: ', logFilePath);
     console.log('-----------------------------------------------------\n');
   } catch (err) {
     console.error('An error occurred while writing the file:', err);
+  }
+};
+
+// const createLogFile = async (data, type) => {
+//   try {
+//     const logDirectory = 'C:/logFile';
+//     let logFilePath;
+
+//     if (type === 'scholar') {
+//       logFilePath = path.join(__dirname, '..', '..', 'logFileGoogleScholar.json');
+//     } else if (type === 'scopus') {
+//       logFilePath = path.join(__dirname, '..', '..', 'logFileScopus.json');
+//     }
+
+//     // if (!fs.existsSync(logDirectory)) {
+//     //   fs.mkdirSync(logDirectory, { recursive: true });
+//     // }
+
+//     let existingData = [];
+//     const existingJson = await fs.promises.readFile(logFilePath, 'utf8');
+//     existingData = JSON.parse(existingJson);
+//     // if (fs.existsSync(logFilePath)) {
+//     //   const existingJson = await fs.promises.readFile(logFilePath, 'utf8');
+//     //   existingData = JSON.parse(existingJson);
+//     // }
+
+//     const updatedData = [...existingData, data];
+//     const jsonData = JSON.stringify(updatedData, null, 2);
+
+//     await fs.promises.writeFile(logFilePath, jsonData, 'utf8');
+
+//     console.log('\n-----------------------------------------------------');
+//     console.log('JSON file has been successfully created.');
+//     console.log('Path: ', logFilePath);
+//     console.log('-----------------------------------------------------\n');
+//   } catch (err) {
+//     console.error('An error occurred while writing the file:', err);
+//   }
+// };
+
+
+const createJsonScourceID = async (data) => {
+  try {
+    let existingData = [];
+    const filePath = '../../../numDoc/source_id.json';
+    try {
+      const existingJson = await fs.promises.readFile(filePath, "utf8");
+      existingData = JSON.parse(existingJson);
+    } catch (err) {
+    }
+
+    const updatedData = [...existingData, data];
+    const jsonData = JSON.stringify(updatedData, null, 2);
+
+    await fs.promises.writeFile(filePath, jsonData, "utf8");
+  } catch (err) {
+    console.error("An error occurred while writing the file:", err);
   }
 };
 
@@ -46,25 +116,6 @@ const createJson = async (data) => {
 };
 
 
-const createJsonScourceID = async (data) => {
-  try {
-    let existingData = [];
-    const filePath = '../../../numDoc/source_id.json';
-    try {
-      const existingJson = await fs.promises.readFile(filePath, "utf8");
-      existingData = JSON.parse(existingJson);
-    } catch (err) {
-    }
-
-    const updatedData = [...existingData, data];
-    const jsonData = JSON.stringify(updatedData, null, 2);
-
-    await fs.promises.writeFile(filePath, jsonData, "utf8");
-    // console.log("JSON source id file has been successfully created or updated.");
-  } catch (err) {
-    console.error("An error occurred while writing the file:", err);
-  }
-};
 
 const updateJson = async (newNotWu, scopus_id) => {
   try {
@@ -115,7 +166,6 @@ const readUrlScholarData = async () => {
     const logDirectory = 'D:/Term_3_2565/Project/json';
     const logFilePath = path.join(logDirectory, 'scholar.json');
 
-    // Check if the file exists before attempting to read it
     if (!fs.existsSync(logFilePath)) {
       console.log('The log file does not exist.');
       return null;
@@ -135,7 +185,6 @@ const readUrlScopusData = async () => {
     const logDirectory = 'D:/Term_3_2565/Project/json';
     const logFilePath = path.join(logDirectory, 'scopus.json');
 
-    // Check if the file exists before attempting to read it
     if (!fs.existsSync(logFilePath)) {
       console.log('The log file does not exist.');
       return null;

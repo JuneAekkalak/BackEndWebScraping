@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
 const Author = require('../models/Author.js');
 
-
-// http://localhost:8000/authors?sortField=document-count&sortOrder=desc
 router.get('/author', async (req, res, next) => {
     try {
         const { sortField, sortOrder, page } = req.query;
@@ -81,7 +78,7 @@ router.get('/author/:id', (req, res, next) => {
     const authorId = req.params.id;
     Author.findById(authorId)
         .then((author) => {
-            if (!author) {
+            if (author.length === 0) {
                 return res.status(404).json({ message: 'Author not found' });
             }
             res.json(author);

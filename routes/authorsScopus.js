@@ -75,7 +75,7 @@ router.get('/author/:id', (req, res, next) => {
   const authorId = req.params.id;
   Author.find({ 'author_scopus_id': authorId })
     .then((author) => {
-      if (!author) {
+      if (author.length === 0) {
         return res.status(404).json({ message: 'Author not found' });
       }
       res.json(author);

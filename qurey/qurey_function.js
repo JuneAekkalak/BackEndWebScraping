@@ -4,16 +4,67 @@ const Author = require("../models/Author");
 const Article = require("../models/Article");
 const Journal = require("../models/journal");
 const Coressponding = require("../models/Corresponding");
-const connectToMongoDB = require("./connectToMongoDB");
-const { MongoClient } = require("mongodb");
-// (async () => {
+const { format } = require('date-fns');
 
-//   await connectToMongoDB();
+let allLogScraping = {
+  author: null,
+  article: null,
+  journal: null
+};
 
-// })();
+const getNowDateTime = () => {
+  const currentDate = new Date();
+  const formattedDate = format(currentDate, 'yyyy-MM-dd HH:mm:ss');
+  return formattedDate
+}
 
-let oldAuthorData = []
+const hasEidOfAuthor = async (eid, scopus_id) => {
+  try {
+    const num = await ArticleScopus.countDocuments({ eid: eid, author_scopus_id: scopus_id });
+    if (num > 0) {
+      return true
+    } else {
+      return false;
+    }
 
+  } catch (error) {
+    return false
+  }
+};
+
+const pushLogScraping = (data, type) => {
+  try {
+    if (type === "author") {
+
+      allLogScraping.author = { numAuthorScraping: data.numAuthorScraping };
+      allLogScraping.error = data.error
+    } else if (type === "article") {
+      allLogScraping.article = data;
+    } else if (type === "journal") {
+      allLogScraping.journal = data;
+    }
+    return "success";
+  } catch (err) {
+    return "failure";
+  }
+};
+
+const resetLogScraping = () => {
+  try {
+    allLogScraping = {
+      author: null,
+      article: null,
+      journal: null
+    };
+    return "reset successfully";
+  } catch (err) {
+    return "reset no successfully";
+  }
+};
+
+const getLogScraping = () => {
+  return allLogScraping
+};
 
 const getOldNumArticleInWU = async (author_scopus_id) => {
   try {
@@ -29,12 +80,13 @@ const getOldNumArticleInWU = async (author_scopus_id) => {
   }
 };
 
+let oldAuthorData = []
+
 const getOldAuthorData = async () => {
   try {
     oldAuthorData = []
     const authors = await AuthorScopus.find();
     oldAuthorData.push(authors);
-    // console.log("oldAuthorData = ",oldAuthorData)
   } catch (error) {
 
   }
@@ -55,19 +107,27 @@ const getOldNumDocInPage = async (scopus_id) => {
 };
 
 
-const addCountDocumenInWu = async (scopus_id, documentsInWu, author_name) => {
+const addCountDocumentInWu = async (scopusId, documentsInWu, authorName) => {
   try {
-    const filter = { author_scopus_id: scopus_id };
+    const filter = { author_scopus_id: scopusId };
     const updateOperation = { $set: { wu_documents: documentsInWu } };
     const result = await AuthorScopus.updateOne(filter, updateOperation);
 
     if (result.modifiedCount > 0) {
-      console.log('\nAdded Count Document In Wu Of ', author_name, ' successfully.\n');
+      console.log(`Added count of documents in Wu for ${authorName} successfully.`);
     } else {
-      console.log('Document not found or no changes made.');
+      const zeroDocumentFilter = { author_scopus_id: scopusId, wu_documents: 0 };
+      const zeroDocumentUpdate = { $set: { wu_documents: documentsInWu } };
+      const zeroDocumentResult = await AuthorScopus.updateOne(zeroDocumentFilter, zeroDocumentUpdate);
+
+      if (zeroDocumentResult.modifiedCount > 0) {
+        console.log(`Updated wu_documents to ${documentsInWu} for ${authorName} successfully.`);
+      } else {
+        console.log('Document not found or no changes made.');
+      }
     }
   } catch (error) {
-    console.error('Error occurred:', error);
+    console.error('An error occurred:', error);
   }
 }
 
@@ -235,8 +295,7 @@ const getCountRecordInArticle = async () => {
     const article = await ArticleScopus.countDocuments();
     return article;
   } catch (error) {
-
-    throw error;
+    return 0
   }
 };
 
@@ -336,9 +395,14 @@ module.exports = {
   getCiteSourceYearLastestInDb,
   getCountAuthorScholar,
   getCountArticleScholar,
-  addCountDocumenInWu,
+  addCountDocumentInWu,
   hasScopusIdInAuthor,
   getOldNumArticleInWU,
   addFieldPageArticle,
-  hasSourceEID
+  hasSourceEID,
+  pushLogScraping,
+  resetLogScraping,
+  getLogScraping,
+  getNowDateTime,
+  hasEidOfAuthor
 };
