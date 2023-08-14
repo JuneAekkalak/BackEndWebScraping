@@ -43,9 +43,7 @@ cron.schedule(cronFormat, async () => {
   try {
     console.log('Running scraper job... At 17:25');
     const scopus = axios.get(`${baseApi}scraper/scraper-scopus-cron`);
-    // console.log('Scraper Scopus job response:', scopus.data);
-
-    // const scholar = axios.get(`${baseApi}scraper/scholar`);
+    const scholar = axios.get(`${baseApi}scraper/scholar`);
 
   } catch (error) {
     console.error("Cron job error:", error);

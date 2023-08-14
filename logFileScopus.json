@@ -86,5 +86,16 @@
       "numUpdateCiteScoreYear": 0
     },
     "errorLinkRequest": []
+  },
+  {
+    "message": "Scraping Data For Scopus Completed Successfully.",
+    "finishTime": "2023-08-14 18:06:45",
+    "numAuthorScraping": 2,
+    "numArticleScraping": 13,
+    "numJournalScraping": {
+      "numJournalScraping": 6,
+      "numUpdateCiteScoreYear": 0
+    },
+    "errorLinkRequest": []
   }
 ]

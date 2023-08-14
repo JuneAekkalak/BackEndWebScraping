@@ -66,6 +66,8 @@ const logging = async () => {
   }
 };
 
+let finshLogScholar
+
 router.get("/scraper-scopus-cron", async (req, res) => {
   try {
     await getOldAuthorData();
@@ -89,13 +91,17 @@ router.get("/scraper-scopus-cron", async (req, res) => {
       setTimeout(async () => {
         await axios.get(`${baseApi}scraper/scopus-journal`);
         finishLog = await logging()
+        await createLogFile(finshLogScholar, "scholar");
         res.status(200).json(finishLog);
       }, 1500);
     } else {
       await Promise.all([authorRequest, articleRequest, journalRequest]);
       finishLog = await logging()
+      await createLogFile(finshLogScholar, "scholar");
       res.status(200).json(finishLog);
     }
+
+
 
   } catch (error) {
     console.error("Cron job error:", error);
@@ -104,6 +110,7 @@ router.get("/scraper-scopus-cron", async (req, res) => {
     });
   }
 });
+
 
 router.get("/scholar", async (req, res) => {
   try {
@@ -114,7 +121,9 @@ router.get("/scholar", async (req, res) => {
     let url_not_ready = [];
     let num_scraping = 0;
     console.log("\nStart Scraping Researcher Data From Google Scholar\n");
+    // const batchSize = 60;
     const batchSize = 5;
+    // authorURL.length
     for (let i = 0; i < 5; i += batchSize) {
       const batchAuthors = authorURL.slice(i, i + batchSize);
       const scrapingPromises = batchAuthors.map((author, index) => {
@@ -137,20 +146,20 @@ router.get("/scholar", async (req, res) => {
         }
       });
     }
-    const finshLog = {
+    finshLogScholar = {
       message: "Scraping Data For Scholar Completed Successfully.",
       finishTime: getNowDateTime(),
       numAuthorScraping: num_scraping,
       numArticleScraping: count,
       errorLinkRequest: url_not_ready,
     }
-    await createLogFile(finshLog, "scholar");
+    // await createLogFile(finshLog,"scholar");
 
     console.log("\n----------------------------------------------------------------")
-    console.log("Finish Scraping Author and Article Data From Scholar : ", finshLog)
+    console.log("Finish Scraping Author and Article Data From Scholar : ", finshLogScholar)
     console.log("----------------------------------------------------------------\n")
 
-    res.status(200).json(finshLog);
+    res.status(200).json(finshLogScholar);
 
   } catch (error) {
     console.error(error);
