@@ -22,6 +22,7 @@ const baseUrl = require('./routes/baseurl')
 const corespondingRouter = require('./routes/corresponding')
 const timeCron = require('./routes/setcron')
 const baseApi = require('./scraper/baseApi')
+const options = { customCssUrl: '/public/css/swagger-ui.css',};
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -39,8 +40,8 @@ const swaggerOptions = {
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
-app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec,options ));
+app.use('/public/css', express.static('public/css'));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use('/scholar', authorsRouter);
