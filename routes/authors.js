@@ -1,3 +1,173 @@
+/**
+ * @swagger
+ * /scholar/author:
+ *   get:
+ *     summary: Get a list of authors
+ *     tags: [Scholar Authors]
+ *     description: Retrieve a list of authors with optional sorting and pagination
+ *     parameters:
+ *       - in: query
+ *         name: sortField
+ *         schema:
+ *           type: string
+ *           enum: [h-index, document-count, name]
+ *         description: Field to sort by (h-index, document-count, name)
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort order (asc, desc)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number for pagination (default is 1)
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AuthorScholar'
+ */
+
+/**
+ * @swagger
+ * /scholar/author/getTotal:
+ *   get:
+ *     summary: Get the total number of authors
+ *     tags: [Scholar Authors]
+ *     description: Retrieve the total number of authors in the database
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ */
+
+/**
+ * @swagger
+ * /scholar/author/{id}:
+ *   get:
+ *     summary: Get an author by ID
+ *     tags: [Scholar Authors]
+ *     description: Retrieve an author by their ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the author
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthorScholar'
+ *       404:
+ *         description: Author not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Author not found
+ */
+
+/**
+ * @swagger
+ * /scholar/author/name/{authorName}:
+ *   get:
+ *     summary: Get authors by name
+ *     tags: [Scholar Authors]
+ *     description: Retrieve authors by their name (partial match)
+ *     parameters:
+ *       - in: path
+ *         name: authorName
+ *         required: true
+ *         description: Name of the author
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AuthorScholar'
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     AuthorScholar:
+ *       type: object
+ *       properties:
+ *         scholar_id:
+ *           type: string
+ *         author_name:
+ *           type: string
+ *         department:
+ *           type: string
+ *         subject_area:
+ *           type: array
+ *           items:
+ *             type: string
+ *         documents:
+ *           type: string
+ *         image:
+ *           type: string
+ *         citation_by:
+ *           type: object
+ *           properties:
+ *             table:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   citations:
+ *                     type: object
+ *                     properties:
+ *                       all:
+ *                         type: number
+ *                       since_2018:
+ *                         type: number
+ *                   h_index:
+ *                     type: object
+ *                     properties:
+ *                       all:
+ *                         type: number
+ *                       since_2018:
+ *                         type: number
+ *                   i10_index:
+ *                     type: object
+ *                     properties:
+ *                       all:
+ *                         type: number
+ *                       since_2018:
+ *                         type: number
+ *             graph:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   year:
+ *                     type: number
+ *                   citations:
+ *                     type: number
+ */
+
 const express = require("express");
 const router = express.Router();
 const Author = require('../models/Author.js');

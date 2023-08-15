@@ -1,9 +1,163 @@
+/**
+ * @swagger
+ * /scopus/author:
+ *   get:
+ *     summary: Get a list of authors
+ *     tags: [Sopus Authors]
+ *     parameters:
+ *       - in: query
+ *         name: sortField
+ *         schema:
+ *           type: string
+ *         description: Field to sort by (h-index, document-count, name)
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *         description: Sorting order (asc, desc)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number
+ *     responses:
+ *       200:
+ *         description: List of authors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AuthorScopus'
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /scopus/author/getTotal:
+ *   get:
+ *     summary: Get total count of authors
+ *     tags: [Sopus Authors]
+ *     responses:
+ *       200:
+ *         description: Total count of authors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /scopus/author/{id}:
+ *   get:
+ *     summary: Get author by ID
+ *     tags: [Sopus Authors]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the author
+ *     responses:
+ *       200:
+ *         description: Author details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthorScopus'
+ *       404:
+ *         description: Author not found
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /scopus/author/name/{authorName}:
+ *   get:
+ *     summary: Get authors by name
+ *     tags: [Sopus Authors]
+ *     parameters:
+ *       - in: path
+ *         name: authorName
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Name of the author
+ *     responses:
+ *       200:
+ *         description: List of authors with matching name
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AuthorScopus'
+ *       500:
+ *         description: Internal server error
+ */
+
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     AuthorScopus:
+ *       type: object
+ *       properties:
+ *         author_scopus_id:
+ *           type: string
+ *         author_name:
+ *           type: string
+ *         citations:
+ *           type: string
+ *         citations_by:
+ *           type: string
+ *         documents:
+ *           type: string
+ *         wu_documents:
+ *           type: string
+ *         h_index:
+ *           type: string
+ *         subject_area:
+ *           type: array
+ *           items:
+ *             type: string
+ *         citations_graph:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               year:
+ *                 type: number
+ *               citations:
+ *                 type: number
+ *         documents_graph:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               year:
+ *                 type: number
+ *               documents:
+ *                 type: number
+ *         url:
+ *           type: string
+ */
+
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const Author = require('../models/AuthorScopus');
 
-// http://localhost:8000/scopus/author?sortField=h-index&sortOrder=asc
 router.get('/author', async (req, res, next) => {
   try {
     const { sortField, sortOrder, page } = req.query;

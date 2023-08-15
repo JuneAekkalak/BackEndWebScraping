@@ -1,7 +1,15 @@
 const express = require('express');
 const axios = require("axios");
 const cors = require('cors');
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 const cron = require('node-cron');
+const { getCron } = require('./qurey/setCron')
+
+const { connectToMongoDB } = require("./qurey/connectToMongoDB");
+(async () => {
+  await connectToMongoDB();
+})();
 
 const authorsRouter = require('./routes/authors');
 const articlesRouter = require('./routes/articles');
@@ -15,15 +23,23 @@ const corespondingRouter = require('./routes/corresponding')
 const timeCron = require('./routes/setcron')
 const baseApi = require('./scraper/baseApi')
 
-const { getCron } = require('./qurey/setCron')
-
-const { connectToMongoDB } = require("./qurey/connectToMongoDB");
-(async () => {
-  await connectToMongoDB();
-})();
-
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0', 
+    info: {
+      title: 'Your API Documentation',
+      version: '1.0.0',
+      description: 'Documentation for your API',
+    },
+  },
+  apis: ['./routes/*.js'], 
+};
+
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
+app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
