@@ -232,18 +232,33 @@ const scrapJournal = async (sourceID) => {
               }
             } else if (result.status === "rejected") {
               console.error("\nError occurred while scraping\n");
-              await scrapJournal();
+              if (typeof sourceID !== "undefined") {
+                await scrapJournal(sourceID);
+              } else {
+                await scrapJournal();
+              }
+
               return;
             }
           }
         } else {
           console.log("!== batchsize");
-          await scrapJournal();
+          if (typeof sourceID !== "undefined") {
+            await scrapJournal(sourceID);
+          } else {
+            await scrapJournal();
+          }
+
           return;
         }
       } else {
         console.log("some field in journal have null");
-        await scrapJournal();
+        if (typeof sourceID !== "undefined") {
+          await scrapJournal(sourceID);
+        } else {
+          await scrapJournal();
+        }
+
         return;
       }
 
@@ -274,7 +289,12 @@ const scrapJournal = async (sourceID) => {
     return logScrapingJournal;
   } catch (error) {
     console.error("\nError occurred while scraping\n : ", error);
-    await scrapJournal();
+    if (typeof sourceID !== "undefined") {
+      await scrapJournal(sourceID);
+    } else {
+      await scrapJournal();
+    }
+
     return [];
   }
 };
@@ -344,6 +364,7 @@ const scrapOneJournal = async (source_id) => {
           const page = await browser.newPage();
           const link = `https://www.scopus.com/sourceid/${journalItem}`;
           await page.goto(link, { waitUntil: "networkidle2" });
+          // await page.waitForTimeout(1600);
           await waitForElement(
             "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
           );
@@ -414,14 +435,23 @@ const scraperChangeNameJournal = async (html) => {
 };
 
 const isEmptyOrLengthZero = (value) => {
-  return (
-    value === "" ||
-    value === null ||
-    (Array.isArray(value) && value.length === 0)
-  );
+  try {
+    return (
+      value === "" ||
+      value === null ||
+      (Array.isArray(value) && value.length === 0)
+    );
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
 };
 
-const scraperJournalData = async (source_id, numNewJournal, page, addJournal) => {
+const scraperJournalData = async (
+  source_id,
+  numNewJournal,
+  page,
+  addJournal
+) => {
   let checkAddJournal = false;
   try {
     if (!(await hasSourceID(source_id))) {
@@ -438,7 +468,9 @@ const scraperJournalData = async (source_id, numNewJournal, page, addJournal) =>
 
       let journal = {
         source_id,
-        journal_name: $("#jourlSection > div.col-md-9.col-xs-9.noPadding > div > h2")
+        journal_name: $(
+          "#jourlSection > div.col-md-9.col-xs-9.noPadding > div > h2"
+        )
           .text()
           .trim(),
       };
@@ -498,7 +530,10 @@ const scraperJournalData = async (source_id, numNewJournal, page, addJournal) =>
         }
       }
 
-      if (typeof addJournal !== "undefined" && addJournal === "addJournalNewArticle") {
+      if (
+        typeof addJournal !== "undefined" &&
+        addJournal === "addJournalNewArticle"
+      ) {
         checkAddJournal = true;
         addJournalData.push(journal);
       }
@@ -519,71 +554,80 @@ const scraperJournalData = async (source_id, numNewJournal, page, addJournal) =>
 };
 
 const dropDownOption = async (page) => {
-  const dropdownSelector = 'select[name="year"]';
-  if (await page.$(dropdownSelector)) {
-    await page.waitForSelector(dropdownSelector);
-    const dropdownOptions = await page.evaluate((selector) => {
-      const dropdown = document.querySelector(selector);
-      const options = Array.from(dropdown.options).map(
-        (option) => option.textContent
-      );
-      return options;
-    }, dropdownSelector);
-    return dropdownOptions;
+  try {
+    const dropdownSelector = 'select[name="year"]';
+    if (await page.$(dropdownSelector)) {
+      await page.waitForSelector(dropdownSelector);
+      const dropdownOptions = await page.evaluate((selector) => {
+        const dropdown = document.querySelector(selector);
+        const options = Array.from(dropdown.options).map(
+          (option) => option.textContent
+        );
+        return options;
+      }, dropdownSelector);
+      return dropdownOptions;
+    }
+  } catch (error) {
+    console.error("An error occurred:", error);
   }
 };
 
 const processDropdowns = async (page, numNewJournal) => {
   const dataCitation = [];
-  const dropDownOptions = await dropDownOption(page);
-  let loopDropDown;
-  if (dropDownOptions) {
-    if (numNewJournal == 0) {
-      loopDropDown = dropDownOptions.length;
-    } else {
-      loopDropDown = numNewJournal;
-    }
-    for (let index = 0; index < loopDropDown; index++) {
-      if (index != 0) {
-        const option = dropDownOptions[index];
-        await page.waitForSelector("#year");
-        await page.click(
-          "#year-button > span.ui-selectmenu-icon.ui-icon.btn-primary.btn-icon.ico-navigate-down.flexDisplay.flexAlignCenter.flexJustifyCenter.flexColumn"
-        );
-        await page.waitForTimeout(1700);
-        await page.click(`#ui-id-${index + 1}`);
-        await page.waitForTimeout(2000);
+  try {
+    const dropDownOptions = await dropDownOption(page);
+    let loopDropDown;
+    if (dropDownOptions) {
+      if (numNewJournal == 0) {
+        loopDropDown = dropDownOptions.length;
+      } else {
+        loopDropDown = numNewJournal;
       }
+      for (let index = 0; index < loopDropDown; index++) {
+        if (index != 0) {
+          const option = dropDownOptions[index];
+          await page.waitForSelector("#year");
+          await page.click(
+            "#year-button > span.ui-selectmenu-icon.ui-icon.btn-primary.btn-icon.ico-navigate-down.flexDisplay.flexAlignCenter.flexJustifyCenter.flexColumn"
+          );
+          await page.waitForTimeout(1700);
+          await page.click(`#ui-id-${index + 1}`);
+          await page.waitForTimeout(2000);
+        }
+        const html = await page.content();
+        const $ = cheerio.load(html);
+
+        const year = $("#year-button > span.ui-selectmenu-text").text();
+        const citeScore = $("#rpResult").text();
+        const calculatedDate = $("#lastUpdatedTimeStamp")
+          .text()
+          .substring("Calculated on ".length)
+          .replace(",", "");
+        const cite = { year, citeScore, calculatedDate };
+        const category = await scrapCategoryJournal(html);
+
+        const data = { cite, category };
+        dataCitation.push(data);
+      }
+    } else if (await page.$("#rpResult")) {
       const html = await page.content();
       const $ = cheerio.load(html);
-
-      const year = $("#year-button > span.ui-selectmenu-text").text();
-      const citeScore = $("#rpResult").text();
-      const calculatedDate = $("#lastUpdatedTimeStamp")
+      const year =
+        $("#csCalculation > div:nth-child(2) > div:nth-child(1) > h3")
+          .text()
+          .match(/\d{4}/)?.[0] || null;
+      const citation = $("#rpResult").text();
+      const category = await scrapCategoryJournal(html);
+      const calculated = $("#lastUpdatedTimeStamp")
         .text()
         .substring("Calculated on ".length)
         .replace(",", "");
-      const cite = { year, citeScore, calculatedDate };
-      const category = await scrapCategoryJournal(html);
-
-      const data = { cite, category };
+      const data = { year, calculated, citation, category };
       dataCitation.push(data);
     }
-  } else if (await page.$("#rpResult")) {
-    const html = await page.content();
-    const $ = cheerio.load(html);
-    const year =
-      $("#csCalculation > div:nth-child(2) > div:nth-child(1) > h3")
-        .text()
-        .match(/\d{4}/)?.[0] || null;
-    const citation = $("#rpResult").text();
-    const category = await scrapCategoryJournal(html);
-    const calculated = $("#lastUpdatedTimeStamp")
-      .text()
-      .substring("Calculated on ".length)
-      .replace(",", "");
-    const data = { year, calculated, citation, category };
-    dataCitation.push(data);
+  } catch (error) {
+    console.error("Main Function Error:", error);
+    throw error;
   }
 
   return dataCitation.length > 0 ? dataCitation : null;

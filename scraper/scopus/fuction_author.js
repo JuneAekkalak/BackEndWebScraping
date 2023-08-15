@@ -13,7 +13,7 @@ const { getBaseURL } = require("../../qurey/baseURL");
 const getAllScopusAuthIDs = require("./getScopusIdFromApi");
 
 const batchSize = 3;
-let roundScraping = 0;
+let roundScraping = 270;
 let allAuthors = [];
 let linkError = [];
 
@@ -21,7 +21,7 @@ const scraperAuthorScopus = async () => {
   try {
     const baseAuthorUrl = getBaseURL();
     let allURLs = await getAllScopusAuthIDs();
-    allURLs = allURLs.slice(0, 2);
+    allURLs = allURLs.slice(0, allURLs.length);
 
     //allURLs.length
     for (let i = roundScraping; i < allURLs.length; i += batchSize) {
@@ -41,16 +41,23 @@ const scraperAuthorScopus = async () => {
         const browser = await puppeteer.launch({ headless: "new" });
         const page = await browser.newPage();
         try {
-          let author_data = await scrapeAuthorData(author_url, page);
+          let author_data = await scrapeAuthorData(author_url, page, data.name);
+          if (author_data === "Warning message") {
+            console.log("aaa")
+            return { status: "Warning message", author: "Warning message" };
+          }
+
           for (const key in author_data) {
             if (author_data[key] === null || author_data[key] === "") {
               author_data = null;
               break;
             }
           }
+
           if (author_data !== null) {
             allAuthors.push(author_data);
           }
+
 
           return { status: "fulfilled", author: author_data };
         } catch (error) {
@@ -77,30 +84,32 @@ const scraperAuthorScopus = async () => {
           for (const result of results) {
             if (result.status === "fulfilled") {
               const data = result.value.author;
-              if (await hasScopusIdInAuthor(data.author_scopus_id)) {
-                console.log(
-                  "\n-----------------------------------------------------------------------------------------------------"
-                );
-                console.log("Update Author Data Of ", data.name);
-                console.log(
-                  "------------------------------------------------------------------------------------------------------"
-                );
-                await updateDataToAuthor(data);
-              } else {
-                console.log(
-                  "\n-----------------------------------------------------------------------------------------------------"
-                );
-                console.log("First Scraping Author Of ", data.name);
-                console.log(
-                  "------------------------------------------------------------------------------------------------------"
-                );
-                await insertAuthorDataToDbScopus(data);
+              if (data !== "Warning message") {
+                if (await hasScopusIdInAuthor(data.author_scopus_id)) {
+                  console.log(
+                    "\n-----------------------------------------------------------------------------------------------------"
+                  );
+                  console.log("Update Author Data Of ", data.name);
+                  console.log(
+                    "------------------------------------------------------------------------------------------------------"
+                  );
+                  await updateDataToAuthor(data);
+                } else {
+                  console.log(
+                    "\n-----------------------------------------------------------------------------------------------------"
+                  );
+                  console.log("First Scraping Author Of ", data.name);
+                  console.log(
+                    "------------------------------------------------------------------------------------------------------"
+                  );
+                  await insertAuthorDataToDbScopus(data);
+                }
+              } else if (result.status === "rejected") {
+                console.error("\nError occurred while scraping\n");
+                allAuthors = [];
+                await scraperAuthorScopus();
+                return;
               }
-            } else if (result.status === "rejected") {
-              console.error("\nError occurred while scraping\n");
-              allAuthors = [];
-              await scraperAuthorScopus();
-              return;
             }
           }
           roundScraping += batchSize;
@@ -111,7 +120,7 @@ const scraperAuthorScopus = async () => {
           return;
         }
       } else {
-        console.log("have author null");
+        console.log("Some author data is incomplete.");
         allAuthors = [];
         await scraperAuthorScopus();
         return;
@@ -162,6 +171,7 @@ const scraperOneAuthorScopus = async (scopus_id) => {
       try {
         const author = await scrapeAuthorData(url, page);
         console.log("Finish Scraping Author Scopus ID : ", id);
+        console.log("author : ", author)
         return author;
       } catch (error) {
         console.error("Error occurred while scraping:", error);
@@ -172,7 +182,8 @@ const scraperOneAuthorScopus = async (scopus_id) => {
     });
 
     const author_data = await Promise.all(scrapePromises);
-    const filtered_data = author_data.filter((author) => author !== null);
+    const filtered_data = author_data.filter((author) => author !== null && author !== "Warning message");
+    // const filtered_data = author_data.filter((author) => author !== null);
 
     return filtered_data;
   } catch (error) {
@@ -194,10 +205,20 @@ const waitForElement = async (selector, maxAttempts = 10, delay = 200) => {
   }
 };
 
-const scrapeAuthorData = async (url, page) => {
+const scrapeAuthorData = async (url, page, author_name) => {
   try {
     const response = await page.goto(url, { waitUntil: "networkidle2" });
-    if (response.ok()) {
+    const element = await page.$("#warningMsgContainer > span.ariaHidden");
+    let checkPageNotFound = false;
+
+    if (element) {
+      const textContent = await element.evaluate(el => el.textContent);
+      if (textContent === "Warning message") {
+        checkPageNotFound = true;
+      }
+    }
+
+    if (response.ok() && !checkPageNotFound) {
       await page.waitForTimeout(1700);
       await waitForElement(
         "#scopus-author-profile-page-control-microui__general-information-content > div.Col-module__hwM1N.offset-lg-2 > section > div > div:nth-child(2) > div > div > div:nth-child(1) > span.Typography-module__lVnit.Typography-module__ix7bs.Typography-module__Nfgvc"
@@ -228,8 +249,15 @@ const scrapeAuthorData = async (url, page) => {
       };
       return author;
     } else {
-      linkError.push(url);
-      return;
+      const newEntry = { name: author_name, url: url };
+      const isDuplicate = linkError.find(
+        ({ name, url }) => name === newEntry.name && url === newEntry.url
+      );
+      if (!isDuplicate) {
+        linkError.push(newEntry);
+      }
+      console.log("linkError : ",linkError)
+      return "Warning message";
     }
   } catch (error) {
     console.error("\nError occurred while scraping\n");
