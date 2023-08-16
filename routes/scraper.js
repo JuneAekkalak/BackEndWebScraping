@@ -124,7 +124,7 @@ router.get("/scholar", async (req, res) => {
     // const batchSize = 60;
     const batchSize = 5;
     // authorURL.length
-    for (let i = 0; i < 5; i += batchSize) {
+    for (let i = 0; i < authorURL.length; i += batchSize) {
       const batchAuthors = authorURL.slice(i, i + batchSize);
       const scrapingPromises = batchAuthors.map((author, index) => {
         const number_author = i + index + 1;

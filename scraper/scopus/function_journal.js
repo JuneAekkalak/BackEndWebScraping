@@ -202,7 +202,11 @@ const scrapJournal = async (sourceID) => {
       });
 
       const batchResults = await Promise.allSettled(promises);
+
       const mappedResults = batchResults.map((result) => {
+        if (typeof result.value.value === "undefined") {
+          result.value.value = null;
+        }
         return (
           result.value.value !== null && result.value.status !== "rejected"
         );
@@ -355,7 +359,8 @@ const scrapOneJournal = async (source_id) => {
 
       const promises = batch.map(async (journalItem) => {
         console.log(
-          `Scraping Journal (${roundJournal + 1
+          `Scraping Journal (${
+            roundJournal + 1
           }/${totalJournals}): Source ID ${journalItem}`
         );
 

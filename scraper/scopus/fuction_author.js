@@ -8,12 +8,12 @@ const {
 const {
   hasScopusIdInAuthor,
   pushLogScraping,
-} = require("../../qurey/qurey_function")
+} = require("../../qurey/qurey_function");
 const { getBaseURL } = require("../../qurey/baseURL");
 const getAllScopusAuthIDs = require("./getScopusIdFromApi");
 
 const batchSize = 3;
-let roundScraping = 270;
+let roundScraping = 0;
 let allAuthors = [];
 let linkError = [];
 
@@ -23,7 +23,6 @@ const scraperAuthorScopus = async () => {
     let allURLs = await getAllScopusAuthIDs();
     allURLs = allURLs.slice(0, allURLs.length);
 
-    //allURLs.length
     for (let i = roundScraping; i < allURLs.length; i += batchSize) {
       const batchURLs = allURLs.slice(i, i + batchSize);
 
@@ -34,7 +33,7 @@ const scraperAuthorScopus = async () => {
         console.log(
           `Scraping Author ${i + 1} of ${allURLs.length}: ${data.name}`
         );
-        const scopusId = data.scopus_id
+        const scopusId = data.scopus_id;
         const author_url = `${baseAuthorUrl}${scopusId}`;
         console.log(`URL: ${author_url}`);
 
@@ -42,9 +41,9 @@ const scraperAuthorScopus = async () => {
         const page = await browser.newPage();
         try {
           let author_data = await scrapeAuthorData(author_url, page, data.name);
-          if (author_data === "Warning message") {
-            console.log("aaa")
-            return { status: "Warning message", author: "Warning message" };
+          if (author_data === "Page not found") {
+            console.log("aaa");
+            return { status: "Page not found", author: "Page not found" };
           }
 
           for (const key in author_data) {
@@ -58,7 +57,6 @@ const scraperAuthorScopus = async () => {
             allAuthors.push(author_data);
           }
 
-
           return { status: "fulfilled", author: author_data };
         } catch (error) {
           console.error("\nError occurred while scraping\n", error);
@@ -68,9 +66,13 @@ const scraperAuthorScopus = async () => {
       });
 
       const results = await Promise.allSettled(promises);
-      const mappedResults = results.map(
-        (result) => result.value.author !== null
-      );
+
+      const mappedResults = results.map((result) => {
+        if (typeof result.value.author === "undefined") {
+          result.value.author = null;
+        }
+        return result.value.author !== null;
+      });
 
       const hasFalse = mappedResults.includes(false);
       const finalResult = !hasFalse;
@@ -84,7 +86,7 @@ const scraperAuthorScopus = async () => {
           for (const result of results) {
             if (result.status === "fulfilled") {
               const data = result.value.author;
-              if (data !== "Warning message") {
+              if (data !== "Page not found") {
                 if (await hasScopusIdInAuthor(data.author_scopus_id)) {
                   console.log(
                     "\n-----------------------------------------------------------------------------------------------------"
@@ -171,7 +173,7 @@ const scraperOneAuthorScopus = async (scopus_id) => {
       try {
         const author = await scrapeAuthorData(url, page);
         console.log("Finish Scraping Author Scopus ID : ", id);
-        console.log("author : ", author)
+        console.log("author : ", author);
         return author;
       } catch (error) {
         console.error("Error occurred while scraping:", error);
@@ -182,8 +184,9 @@ const scraperOneAuthorScopus = async (scopus_id) => {
     });
 
     const author_data = await Promise.all(scrapePromises);
-    const filtered_data = author_data.filter((author) => author !== null && author !== "Warning message");
-    // const filtered_data = author_data.filter((author) => author !== null);
+    const filtered_data = author_data.filter(
+      (author) => author !== null && author !== "Page not found"
+    );
 
     return filtered_data;
   } catch (error) {
@@ -208,12 +211,12 @@ const waitForElement = async (selector, maxAttempts = 10, delay = 200) => {
 const scrapeAuthorData = async (url, page, author_name) => {
   try {
     const response = await page.goto(url, { waitUntil: "networkidle2" });
-    const element = await page.$("#warningMsgContainer > span.ariaHidden");
+    const element = await page.$("#warningMsgContainer > span:nth-child(2)");
     let checkPageNotFound = false;
 
     if (element) {
-      const textContent = await element.evaluate(el => el.textContent);
-      if (textContent === "Warning message") {
+      const textContent = await element.evaluate((el) => el.textContent);
+      if (textContent === "Page not found") {
         checkPageNotFound = true;
       }
     }
@@ -256,15 +259,14 @@ const scrapeAuthorData = async (url, page, author_name) => {
       if (!isDuplicate) {
         linkError.push(newEntry);
       }
-      console.log("linkError : ",linkError)
-      return "Warning message";
+      console.log("linkError : ", linkError);
+      return "Page not found";
     }
   } catch (error) {
     console.error("\nError occurred while scraping\n");
     return null;
   }
 };
-
 
 const scrapCitation = async (url, page) => {
   try {
@@ -393,5 +395,5 @@ module.exports = {
   scraperAuthorScopus,
   getScopusID,
   getURLScopus,
-  scraperOneAuthorScopus
+  scraperOneAuthorScopus,
 };
