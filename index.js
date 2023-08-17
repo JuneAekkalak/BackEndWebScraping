@@ -27,9 +27,6 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 const swaggerOptions = {
-  swaggerOptions: {
-    url: 'http://petstore.swagger.io/v2/swagger.json'
-  },
   definition: {
     openapi: '3.0.0',
     info: {
@@ -37,11 +34,7 @@ const swaggerOptions = {
       version: '1.0.0',
       description: 'Documentation for your API',
     },
-  }, servers: [
-    {
-      url: "https://scrap-backend.vercel.app/", // url
-    },
-  ],
+  }, 
   apis: ['./routes/*.js'],
 };
 
