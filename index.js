@@ -27,6 +27,9 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 const swaggerOptions = {
+  swaggerOptions: {
+    url: 'http://petstore.swagger.io/v2/swagger.json'
+  },
   definition: {
     openapi: '3.0.0',
     info: {
@@ -43,10 +46,7 @@ const swaggerOptions = {
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
-app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCssUrl:
-    "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-newspaper.css",
-}));
+app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
