@@ -15,13 +15,13 @@ const {
   scraperOneArticleScopus,
   scrapeArticleData,
 } = require("../scraper/scopus/function_article");
-const { scrapOneJournal, scrapJournal } = require("../scraper/scopus/function_journal");
+const { scrapOneJournal, scrapJournal, resetVariableJournal } = require("../scraper/scopus/function_journal");
 const {
   getOldAuthorData,
   getCountRecordInArticle,
   resetLogScraping,
   getLogScraping,
-  getNowDateTime,
+  getNowDateTime
 } = require("../qurey/qurey_function");
 const puppeteer = require("puppeteer");
 const {
@@ -86,18 +86,22 @@ router.get("/scraper-scopus-cron", async (req, res) => {
       );
     }
     let finishLog
+
     if (articleCount === 0) {
+      console.log("Scrap")
       await Promise.all([authorRequest, articleRequest]);
       setTimeout(async () => {
         await axios.get(`${baseApi}scraper/scopus-journal`);
         finishLog = await logging()
-        await createLogFile(finshLogScholar, "scholar");
+        resetVariableJournal();
+        // await createLogFile(finshLogScholar, "scholar");
         res.status(200).json(finishLog);
       }, 1500);
     } else {
       await Promise.all([authorRequest, articleRequest, journalRequest]);
       finishLog = await logging()
-      await createLogFile(finshLogScholar, "scholar");
+      resetVariableJournal();
+      // await createLogFile(finshLogScholar, "scholar");
       res.status(200).json(finishLog);
     }
 
@@ -124,7 +128,7 @@ router.get("/scholar", async (req, res) => {
     // const batchSize = 60;
     const batchSize = 5;
     // authorURL.length
-    for (let i = 0; i < authorURL.length; i += batchSize) {
+    for (let i = 0; i < 5; i += batchSize) {
       const batchAuthors = authorURL.slice(i, i + batchSize);
       const scrapingPromises = batchAuthors.map((author, index) => {
         const number_author = i + index + 1;
@@ -289,6 +293,8 @@ router.get("/scraper-articleOfauthor-scopus", async (req, res) => {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2" });
+    const checkNumDoc = {}
+    checkNumDoc.status = "first"
     const article = await scrapeArticleData(url, page, 0, scopus_id);
     await browser.close();
 

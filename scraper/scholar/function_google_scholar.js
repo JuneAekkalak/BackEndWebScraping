@@ -120,7 +120,7 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
     url_not = [];
     url_author;
 
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
     await page.setUserAgent(userAgent.random().toString());
     const scholar_id = await getUserScholarId(authorObject.url)
@@ -197,7 +197,7 @@ const getAuthorScholar = async (author_id) => {
   const all_id = author_id.split(",").map((e) => e.trim());
 
   try {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: "new" });
 
     let authorAll = [];
     let url_not_ready = [];
@@ -257,7 +257,7 @@ const getAuthorScholar = async (author_id) => {
 const getArticleScholar = async (scholar_id) => {
 
   try {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
     await page.setUserAgent(userAgent.random().toString());
 
@@ -402,7 +402,7 @@ const check_src_image = async (html) => {
 const getGraph = async (url) => {
   try {
     let graph = [];
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
     await page.setUserAgent(userAgent.random().toString());
 

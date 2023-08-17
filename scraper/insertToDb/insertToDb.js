@@ -184,7 +184,7 @@ const insertArticleDataToDbScopus = async (data, author_name, roundArticleScrapi
     });
     await ArticleScopus.insertMany(articles);
 
-    console.log('\nArticles ' + (roundArticleScraping + Number(1)) + ' to ' + (roundArticleScraping + batchSize) + ' of | ' + author_name + ' saved successfully to MongoDB.');
+    console.log('\nArticles of | ' + author_name + ' saved successfully to MongoDB.');
     console.log("");
   } catch (error) {
     console.error('Error saving Articles data to MongoDB:', error);
