@@ -28,18 +28,25 @@ const PORT = process.env.PORT || 8000;
 
 const swaggerOptions = {
   definition: {
-    openapi: '3.0.0', 
+    openapi: '3.0.0',
     info: {
       title: 'Your API Documentation',
       version: '1.0.0',
       description: 'Documentation for your API',
     },
-  },
-  apis: ['./routes/*.js'], 
+  }, servers: [
+    {
+      url: "https://scrap-backend.vercel.app/", // url
+    },
+  ],
+  apis: ['./routes/*.js'],
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
-app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCssUrl:
+    "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-newspaper.css",
+}));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
@@ -54,7 +61,7 @@ app.use('/conectionDB', conectionDB);
 app.use('/baseurl', baseUrl);
 app.use('/timecron', timeCron);
 
-const cronFormat = getCron() 
+const cronFormat = getCron()
 cron.schedule(cronFormat, async () => {
   try {
     console.log('Running scraper job... At 17:25');

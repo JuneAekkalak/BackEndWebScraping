@@ -461,7 +461,6 @@ const scraperJournalData = async (
 ) => {
   let checkAddJournal = false;
   try {
-    if (!(await hasSourceID(source_id))) {
       let html = await page.content();
       const buttonElement = await page.$("#csSubjContainer > button");
 
@@ -546,9 +545,6 @@ const scraperJournalData = async (
       }
 
       return journal;
-    } else {
-      return;
-    }
   } catch (error) {
     console.error("\nError occurred while scraping:\n", error);
 
