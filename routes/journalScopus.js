@@ -220,6 +220,21 @@ router.get('/journal/:source_id', async (req, res, next) => {
     }
 });
 
+router.get('/journal/changeJournal/:source_id', async (req, res, next) => {
+    try {
+        const { source_id } = req.params;
+        console.log(source_id)
+        const journal = await Journal.find({ 'source_id': source_id });
+        if (journal.length === 0) {
+            return res.status(200).json(false);
+        }else{
+            return res.status(200).json(true);
+        }
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.get('/journal/citescore/:source_id', async (req, res, next) => {
     try {
         const { source_id } = req.params;
