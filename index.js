@@ -26,6 +26,9 @@ const baseApi = require('./scraper/baseApi')
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+const CSS_URL =
+  "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css";
+
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -34,12 +37,17 @@ const swaggerOptions = {
       version: '1.0.0',
       description: 'Documentation for your API',
     },
-  }, 
+  }, servers: [
+    {
+      url: "https://scrap-backend.vercel.app/",
+      description: "My API Documentation",
+    },
+  ],
   apis: ['./routes/*.js'],
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
-app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec,{ customCssUrl: CSS_URL }));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
