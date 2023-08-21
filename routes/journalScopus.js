@@ -210,9 +210,9 @@ router.get('/journal/:source_id', async (req, res, next) => {
     try {
         const { source_id } = req.params;
         console.log(source_id)
-        const journal = await Journal.find({ 'source_id': source_id });
-        if (journal.length === 0) {
-            return res.status(404).json(false);
+        const journal = await Journal.findOne({ 'source_id': source_id });
+        if (!journal) {
+            return res.status(404).json({ error: 'Journal not found' });
         }
         res.json(journal);
     } catch (err) {
@@ -227,7 +227,7 @@ router.get('/journal/changeJournal/:source_id', async (req, res, next) => {
         const journal = await Journal.find({ 'source_id': source_id });
         if (journal.length === 0) {
             return res.status(200).json(false);
-        }else{
+        } else {
             return res.status(200).json(true);
         }
     } catch (err) {
@@ -239,10 +239,10 @@ router.get('/journal/citescore/:source_id', async (req, res, next) => {
     try {
         const { source_id } = req.params;
         console.log(source_id)
-        const journal = await Journal.find({ 'source_id': source_id })
+        const journal = await Journal.findOne({ 'source_id': source_id })
             .select('source_id cite_source');
-        if (journal.length === 0) {
-            return res.status(404).json(false);
+        if (!journal) {
+            return res.status(404).json({ error: 'Journal not found' });
         }
         res.json(journal);
     } catch (err) {

@@ -31,6 +31,7 @@ const insertDataToDbScholar = async (data) => {
               const existingArticle = await Article.findOne({ article_id: article.article_id, scholar_id: existingAuthor.scholar_id });
 
               if (existingArticle) {
+
                 existingArticle.set({
                   article_name: article.article_name,
                   authors: article.authors,
@@ -50,6 +51,7 @@ const insertDataToDbScholar = async (data) => {
 
                 await existingArticle.save();
               } else {
+
                 const newArticle = new Article({
                   article_id: article.article_id,
                   article_name: article.article_name,
@@ -127,6 +129,7 @@ const insertDataToDbScholar = async (data) => {
   }
 };
 
+
 const insertAuthorDataToDbScopus = async (data) => {
   try {
     const objectId = new ObjectId();
@@ -154,7 +157,26 @@ const insertAuthorDataToDbScopus = async (data) => {
 };
 
 
-const insertArticleDataToDbScopus = async (data, author_name, roundArticleScraping, batchSize) => {
+const insertWuDocBeforAuthorScopus = async (scopus_id, wu_documents, author_name) => {
+  try {
+    const objectId = new ObjectId();
+
+    const newAuthor = new AuthorScopus({
+      _id: objectId,
+      author_scopus_id: scopus_id,
+      wu_documents: wu_documents
+    });
+
+    await newAuthor.save();
+    console.log('\nAdded Count Document In Wu Of ', author_name, ' successfully.\n');
+
+  } catch (error) {
+    console.error('Error Added Count Document to MongoDB:', error);
+  }
+};
+
+
+const insertArticleDataToDbScopus = async (data, author_name) => {
   try {
     let scopus_id
     const articles = data.map((articleData) => {
@@ -189,7 +211,7 @@ const insertArticleDataToDbScopus = async (data, author_name, roundArticleScrapi
   } catch (error) {
     console.error('Error saving Articles data to MongoDB:', error);
   }
-};
+}
 
 const insertDataToJournal = async (data, source_id) => {
   try {
@@ -214,6 +236,7 @@ const insertDataToJournal = async (data, source_id) => {
   }
 };
 
+
 const insertDataToCoressponding = async (data) => {
   try {
     const newCoressponding = new Coressponding({
@@ -229,6 +252,7 @@ const insertDataToCoressponding = async (data) => {
   }
 };
 
+
 const updateDataToJournal = async (data, source_id) => {
   const newData = data.map(item => {
     return {
@@ -236,7 +260,6 @@ const updateDataToJournal = async (data, source_id) => {
       category: item.category
     };
   });
-  console.log('mynewdata : ', newData);
 
   try {
     const oldData = await Journal.findOne({ source_id });
@@ -288,5 +311,6 @@ module.exports = {
   insertDataToJournal,
   updateDataToJournal,
   updateDataToAuthor,
-  insertDataToCoressponding
+  insertDataToCoressponding,
+  insertWuDocBeforAuthorScopus
 };

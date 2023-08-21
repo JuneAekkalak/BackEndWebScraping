@@ -94,14 +94,14 @@ router.get("/scraper-scopus-cron", async (req, res) => {
         await axios.get(`${baseApi}scraper/scopus-journal`);
         finishLog = await logging()
         resetVariableJournal();
-        // await createLogFile(finshLogScholar, "scholar");
+        await createLogFile(finshLogScholar, "scholar");
         res.status(200).json(finishLog);
       }, 1500);
     } else {
       await Promise.all([authorRequest, articleRequest, journalRequest]);
       finishLog = await logging()
       resetVariableJournal();
-      // await createLogFile(finshLogScholar, "scholar");
+      await createLogFile(finshLogScholar, "scholar");
       res.status(200).json(finishLog);
     }
 

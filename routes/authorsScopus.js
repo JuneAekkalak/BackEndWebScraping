@@ -227,9 +227,9 @@ router.get('/author/getTotal', (req, res, next) => {
 
 router.get('/author/:id', (req, res, next) => {
   const authorId = req.params.id;
-  Author.find({ 'author_scopus_id': authorId })
+  Author.findOne({ 'author_scopus_id': authorId })
     .then((author) => {
-      if (author.length === 0) {
+      if (!author) {
         return res.status(404).json({ message: 'Author not found' });
       }
       res.json(author);

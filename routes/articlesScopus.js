@@ -2,7 +2,7 @@
  * @swagger
  * /scopus/article/{id}:
  *   get:
- *     summary: Get an article by Object ID
+ *     summary: Get an article by EID
  *     tags: [Scopus Articles]
  *     description: Retrieve an article by its ID
  *     parameters:
@@ -135,11 +135,11 @@ const express = require("express");
 const router = express.Router();
 const Article = require('../models/ArticleScopus');
 
-router.get('/article/:id', async (req, res, next) => {
+router.get('/article/:eid', async (req, res, next) => {
     try {
-        const { id } = req.params;
-        const article = await Article.findById(id);
-        if (article.length === 0) {
+        const { eid } = req.params;
+        const article = await Article.findOne({ 'eid': eid });
+        if (!article) {
             return res.status(404).json({ error: 'Article not found' });
         }
         res.json(article);
@@ -164,13 +164,13 @@ router.get('/article/authorId/:id', async (req, res, next) => {
 router.get('/article/eid/:eid', async (req, res, next) => {
     try {
         const { eid } = req.params;
-        const article = await Article.find({ 'eid': eid })
+        const article = await Article.findOne({ 'eid': eid })
             .select('eid first_author co_author');
-        
-        if (article.length === 0) {
+
+        if (!article) {
             return res.status(404).json({ error: 'Article not found' });
         }
-        
+
         res.json(article);
     } catch (err) {
         next(err);

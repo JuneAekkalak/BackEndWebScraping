@@ -1,6 +1,6 @@
 {
-  "DATABASE_URI": "mongodb://adminwuris:wurisadmin@192.168.75.58:27017/",
-  "DB_NAME": "wurisdb",
+  "DATABASE_URI": "mongodb+srv://root:1234@db01.uyg1g.mongodb.net/test",
+  "DB_NAME": "wu-researcher",
   "BASEURL": "https://www.scopus.com/authid/detail.uri?authorId=",
-  "SETCRON": "05 11 * * *"
+  "SETCRON": "2 12 * * *"
 }

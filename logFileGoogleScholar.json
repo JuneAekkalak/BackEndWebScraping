@@ -1,3 +1,9 @@
 [
-  
+  {
+    "message": "Scraping Data For Scholar Completed Successfully.",
+    "finishTime": "2023-08-21 12:02:26",
+    "numAuthorScraping": 5,
+    "numArticleScraping": 77,
+    "errorLinkRequest": []
+  }
 ]
