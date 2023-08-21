@@ -148,7 +148,7 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
       );
       console.log("Number of Articles: ", content.length);
 
-      const batchSize = 50;
+      const batchSize = 30;
 
       const article_detail_promises = [];
 
@@ -279,7 +279,7 @@ const getArticleScholar = async (scholar_id) => {
       console.log(" Scrapin Article of scohalr ID : ", scholar_id);
       console.log("Number of Articles: ", content.length);
 
-      const batchSize = 50; 
+      const batchSize = 30; 
 
       const article_detail_promises = [];
       for (let i = 0; i < content.length; i += batchSize) {
