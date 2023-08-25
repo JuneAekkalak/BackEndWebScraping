@@ -29,6 +29,7 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 const jsonFilePath = path.join(__dirname, '.','apiDoc.json');
+
 const swaggerDocument = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
 
 
