@@ -5,6 +5,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const cron = require('node-cron');
 const { getCron } = require('./qurey/setCron')
+const fs = require('fs');
 
 const { connectToMongoDB } = require("./qurey/connectToMongoDB");
 (async () => {
@@ -26,28 +27,7 @@ const baseApi = require('./scraper/baseApi')
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-const CSS_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css";
-
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Your API Documentation',
-      version: '1.0.0',
-      description: 'Documentation for your API',
-    },
-  }, servers: [
-    {
-      url: "https://scrap-backend.vercel.app/",
-      description: "My API Documentation",
-    },
-  ],
-  apis: ['./routes/*.js'],
-};
-
-const swaggerSpec = swaggerJSDoc(swaggerOptions);
-app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerSpec,{ customCssUrl: CSS_URL }));
+const swaggerDocument  = JSON.parse(fs.readFileSync('./apiDoc.json', 'utf8'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
@@ -61,6 +41,7 @@ app.use('/scraper', scraperRouter);
 app.use('/conectionDB', conectionDB);
 app.use('/baseurl', baseUrl);
 app.use('/timecron', timeCron);
+app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const cronFormat = getCron()
 cron.schedule(cronFormat, async () => {

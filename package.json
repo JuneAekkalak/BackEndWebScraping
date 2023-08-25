@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "startdev": "nodemon index.js",
+    "build": "webpack",
+    "prod": "nodemon dist/wuresearch.js"
   },
   "keywords": [],
   "author": "",
@@ -40,5 +44,9 @@
     "swagger-ui-express": "^5.0.0",
     "user-agents": "^1.0.1421",
     "xpath": "^0.0.32"
+  },
+  "devDependencies": {
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   }
 }

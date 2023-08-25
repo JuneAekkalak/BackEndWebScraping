@@ -1,0 +1,1133 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Your API Documentation",
+        "version": "1.0.0",
+        "description": "Documentation for your API"
+    },
+    "paths": {
+        "/scholar/author": {
+            "get": {
+                "summary": "Get a list of authors",
+                "tags": [
+                    "Scholar Authors"
+                ],
+                "description": "Retrieve a list of authors with optional sorting and pagination",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "sortField",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "h-index",
+                                "document-count",
+                                "name"
+                            ]
+                        },
+                        "description": "Field to sort by (h-index, document-count, name)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortOrder",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "description": "Sort order (asc, desc)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number for pagination (default is 1)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AuthorScholar"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scholar/author/getTotal": {
+            "get": {
+                "summary": "Get the total number of authors",
+                "tags": [
+                    "Scholar Authors"
+                ],
+                "description": "Retrieve the total number of authors in the database",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scholar/author/{id}": {
+            "get": {
+                "summary": "Get an author by ID",
+                "tags": [
+                    "Scholar Authors"
+                ],
+                "description": "Retrieve an author by their ID",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "ID of the author",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthorScholar"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Author not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "message": "Author not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scholar/author/name/{authorName}": {
+            "get": {
+                "summary": "Get authors by name",
+                "tags": [
+                    "Scholar Authors"
+                ],
+                "description": "Retrieve authors by their name (partial match)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "authorName",
+                        "required": true,
+                        "description": "Name of the author",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AuthorScholar"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scholar/article/{id}": {
+            "get": {
+                "summary": "Get an article by ID from Scholar",
+                "tags": [
+                    "Scholar Articles"
+                ],
+                "description": "Retrieve an article by its ID from the Scholar route",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "ID of the article",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArticleScholar"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Article not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scholar/article/authorId/{id}": {
+            "get": {
+                "summary": "Get articles by author ID from Scholar",
+                "tags": [
+                    "Scholar Articles"
+                ],
+                "description": "Retrieve articles by author's ID from the Scholar route",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "ID of the author",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ArticleScholar"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Articles not found for the given author ID",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Articles not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/article/{id}": {
+            "get": {
+                "summary": "Get an article by EID",
+                "tags": [
+                    "Scopus Articles"
+                ],
+                "description": "Retrieve an article by its ID",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "ID of the article",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArticleScopus"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Article not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/article/authorId/{id}": {
+            "get": {
+                "summary": "Get articles by author ID",
+                "tags": [
+                    "Scopus Articles"
+                ],
+                "description": "Retrieve articles by author's ID",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "ID of the author",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ArticleScopus"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Articles not found for the given author ID",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Articles not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/article/eid/{eid}": {
+            "get": {
+                "summary": "Get an article by EID",
+                "tags": [
+                    "Scopus Articles"
+                ],
+                "description": "Retrieve an article by its EID",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "eid",
+                        "required": true,
+                        "description": "EID of the article",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ArticleScopus"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Article not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/author": {
+            "get": {
+                "summary": "Get a list of authors",
+                "tags": [
+                    "Scopus Authors"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "sortField",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Field to sort by (h-index, document-count, name)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortOrder",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Sorting order (asc, desc)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of authors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AuthorScopus"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/scopus/author/getTotal": {
+            "get": {
+                "summary": "Get total count of authors",
+                "tags": [
+                    "Scopus Authors"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Total count of authors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/scopus/author/{id}": {
+            "get": {
+                "summary": "Get author by ID",
+                "tags": [
+                    "Scopus Authors"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true,
+                        "description": "ID of the author"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Author details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthorScopus"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Author not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/scopus/author/name/{authorName}": {
+            "get": {
+                "summary": "Get authors by name",
+                "tags": [
+                    "Scopus Authors"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "authorName",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true,
+                        "description": "Name of the author"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of authors with matching name",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AuthorScopus"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/scopus/corresponding/{eid}": {
+            "get": {
+                "summary": "Get corresponding authors by Scopus EID",
+                "tags": [
+                    "Corresponding"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "eid",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true,
+                        "description": "Scopus EID of the article"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with corresponding authors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Corresponding"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Corresponding authors not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Corresponding not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/journal": {
+            "get": {
+                "summary": "Get a list of journals",
+                "tags": [
+                    "Journal"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "sortField",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Field to sort by (e.g. \"journal-name\")"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortOrder",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Sort order (\"asc\" or \"desc\")"
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number for pagination"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with a list of journals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Journal"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/journal/getTotal": {
+            "get": {
+                "summary": "Get the total count of journals",
+                "tags": [
+                    "Journal"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with the total count",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/journal/{source_id}": {
+            "get": {
+                "summary": "Get a journal by source ID",
+                "tags": [
+                    "Journal"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "source_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true,
+                        "description": "Source ID of the journal"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with the journal data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Journal"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Journal not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Journal not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/journal/citescore/{source_id}": {
+            "get": {
+                "summary": "Get CiteScore data for a journal by source ID",
+                "tags": [
+                    "Journal"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "source_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true,
+                        "description": "Source ID of the journal"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with CiteScore data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "source_id": {
+                                            "type": "string"
+                                        },
+                                        "cite_source": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Journal not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Journal not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/journal/name/{journalName}": {
+            "get": {
+                "summary": "Search for journals by name",
+                "tags": [
+                    "Journal"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "journalName",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true,
+                        "description": "Name of the journal"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with matching journals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Journal"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ArticleScopus": {
+                "type": "object",
+                "properties": {
+                    "eid": {
+                        "type": "string"
+                    },
+                    "article_name": {
+                        "type": "string"
+                    },
+                    "source_id": {
+                        "type": "string"
+                    },
+                    "first_author": {
+                        "type": "string"
+                    },
+                    "co_author": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "co_author_department": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "volume": {
+                        "type": "string"
+                    },
+                    "issue": {
+                        "type": "string"
+                    },
+                    "pages": {
+                        "type": "string"
+                    },
+                    "document_type": {
+                        "type": "string"
+                    },
+                    "source_type": {
+                        "type": "string"
+                    },
+                    "issn": {
+                        "type": "string"
+                    },
+                    "original_language": {
+                        "type": "string"
+                    },
+                    "publisher": {
+                        "type": "string"
+                    },
+                    "abstract": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "author_scopus_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "AuthorScopus": {
+                "type": "object",
+                "properties": {
+                    "author_scopus_id": {
+                        "type": "string"
+                    },
+                    "author_name": {
+                        "type": "string"
+                    },
+                    "citations": {
+                        "type": "string"
+                    },
+                    "citations_by": {
+                        "type": "string"
+                    },
+                    "documents": {
+                        "type": "string"
+                    },
+                    "wu_documents": {
+                        "type": "string"
+                    },
+                    "h_index": {
+                        "type": "string"
+                    },
+                    "subject_area": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "citations_graph": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "year": {
+                                    "type": "number"
+                                },
+                                "citations": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    },
+                    "documents_graph": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "year": {
+                                    "type": "number"
+                                },
+                                "documents": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    },
+                    "url": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Corresponding": {
+                "type": "object",
+                "properties": {
+                    "scopusEID": {
+                        "type": "string"
+                    },
+                    "corresAuthorID": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "correspondingData": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "author_name": {
+                                    "type": "string"
+                                },
+                                "department": {
+                                    "type": "string"
+                                },
+                                "email": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Journal": {
+                "type": "object",
+                "properties": {
+                    "source_id": {
+                        "type": "string"
+                    },
+                    "journal_name": {
+                        "type": "string"
+                    },
+                    "scopus_coverage_years": {
+                        "type": "string"
+                    },
+                    "publisher": {
+                        "type": "string"
+                    },
+                    "issn": {
+                        "type": "string"
+                    },
+                    "eissn": {
+                        "type": "string"
+                    },
+                    "source_type": {
+                        "type": "string"
+                    },
+                    "subject_area": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "changeJournal": {
+                        "type": "object"
+                    },
+                    "cite_source": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "ArticleScholar": {
+                "type": "object",
+                "properties": {
+                    "article_id": {
+                        "type": "string"
+                    },
+                    "article_name": {
+                        "type": "string"
+                    },
+                    "authors": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "publication_date": {
+                        "type": "string"
+                    },
+                    "conference": {
+                        "type": "string"
+                    },
+                    "institution": {
+                        "type": "string"
+                    },
+                    "journal": {
+                        "type": "string"
+                    },
+                    "volume": {
+                        "type": "string"
+                    },
+                    "issue": {
+                        "type": "string"
+                    },
+                    "pages": {
+                        "type": "string"
+                    },
+                    "publisher": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "total_citations": {
+                        "type": "string"
+                    },
+                    "scholar_id": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "author_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "AuthorScholar": {
+                "type": "object",
+                "properties": {
+                    "scholar_id": {
+                        "type": "string"
+                    },
+                    "author_name": {
+                        "type": "string"
+                    },
+                    "department": {
+                        "type": "string"
+                    },
+                    "subject_area": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "documents": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string"
+                    },
+                    "citation_by": {
+                        "type": "object",
+                        "properties": {
+                            "table": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "citations": {
+                                            "type": "object",
+                                            "properties": {
+                                                "all": {
+                                                    "type": "number"
+                                                },
+                                                "since_2018": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        },
+                                        "h_index": {
+                                            "type": "object",
+                                            "properties": {
+                                                "all": {
+                                                    "type": "number"
+                                                },
+                                                "since_2018": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        },
+                                        "i10_index": {
+                                            "type": "object",
+                                            "properties": {
+                                                "all": {
+                                                    "type": "number"
+                                                },
+                                                "since_2018": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "graph": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "year": {
+                                            "type": "number"
+                                        },
+                                        "citations": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
