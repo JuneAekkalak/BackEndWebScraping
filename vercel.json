@@ -1,14 +1,11 @@
 {
     "version": 2,
     "name": "nodejs-mongo",
+    "buildCommand": "npm run build",
     "builds": [
       {
         "src": "index.js",
         "use": "@vercel/node"
-      },
-      {
-        "src": "npm run build",
-        "use": "@vercel/static"
       }
     ],
     "routes": [
