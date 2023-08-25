@@ -29,7 +29,11 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 const jsonFilePath = path.join(__dirname, '.','apiDoc.json');
+
 const swaggerDocument = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+
+// const swaggerDocument = path.join(__dirname, 'apiDoc.json');
+// const swaggerDocument  = JSON.parse(fs.readFileSync('./apiDoc.json', 'utf8'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
