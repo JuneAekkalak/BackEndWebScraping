@@ -6,6 +6,7 @@ const swaggerUi = require('swagger-ui-express');
 const cron = require('node-cron');
 const { getCron } = require('./qurey/setCron')
 const fs = require('fs');
+const path = require('path');
 
 const { connectToMongoDB } = require("./qurey/connectToMongoDB");
 (async () => {
@@ -27,7 +28,8 @@ const baseApi = require('./scraper/baseApi')
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-const swaggerDocument  = JSON.parse(fs.readFileSync('./apiDoc.json', 'utf8'));
+const jsonFilePath = path.join(__dirname, '.','apiDoc.json');
+const swaggerDocument = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
