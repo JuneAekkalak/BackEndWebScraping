@@ -74,18 +74,17 @@ router.get('/author/getTotal', (req, res, next) => {
       });
   });
 
-router.get('/author/:id', (req, res, next) => {
-    const authorId = req.params.id;
-    Author.findById(authorId)
-        .then((author) => {
-            if (author.length === 0) {
-                return res.status(404).json({ message: 'Author not found' });
-            }
-            res.json(author);
-        })
-        .catch((err) => {
-            next(err);
-        });
+  router.get('/author/:scholar_id', async (req, res, next) => {
+    try {
+        const { scholar_id } = req.params;
+        const author = await Author.findOne({'scholar_id' : scholar_id});
+        if (!author) {
+            return res.status(404).json({ error: 'Author not found' });
+        }
+        res.json(author);
+    } catch (err) {
+        next(err);
+    }
 });
 
 router.get('/author/name/:authorName', async (req, res, next) => {

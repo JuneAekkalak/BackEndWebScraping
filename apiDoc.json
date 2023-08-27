@@ -65,9 +65,9 @@
                 }
             }
         },
-        "/scholar/author/{id}": {
+        "/scholar/author/{scholar_id}": {
             "get": {
-                "summary": "Get an author by ID",
+                "summary": "Get an author by scholar ID",
                 "tags": [
                     "Scholar Authors"
                 ],
@@ -75,9 +75,9 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
+                        "name": "scholar_id",
                         "required": true,
-                        "description": "ID of the author",
+                        "description": "scholar_id of the author",
                         "schema": {
                             "type": "string"
                         }
@@ -184,9 +184,9 @@
                 }
             }
         },
-        "/scholar/article/authorId/{id}": {
+        "/scholar/article/authorId/{scholar_id}": {
             "get": {
-                "summary": "Get articles by author ID from Scholar",
+                "summary": "Get articles by scholar ID from Scholar",
                 "tags": [
                     "Scholar Articles"
                 ],
@@ -194,9 +194,9 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
+                        "name": "scholar_id",
                         "required": true,
-                        "description": "ID of the author",
+                        "description": "scholar_id of the author",
                         "schema": {
                             "type": "string"
                         }
