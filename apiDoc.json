@@ -65,32 +65,6 @@
                 }
             }
         },
-        "/scholar/author/getTotal": {
-            "get": {
-                "summary": "Get the total number of authors",
-                "tags": [
-                    "Scholar Authors"
-                ],
-                "description": "Retrieve the total number of authors in the database",
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "count": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/scholar/author/{id}": {
             "get": {
                 "summary": "Get an author by ID",
@@ -342,51 +316,6 @@
                 }
             }
         },
-        "/scopus/article/eid/{eid}": {
-            "get": {
-                "summary": "Get an article by EID",
-                "tags": [
-                    "Scopus Articles"
-                ],
-                "description": "Retrieve an article by its EID",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "eid",
-                        "required": true,
-                        "description": "EID of the article",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/ArticleScopus"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Article not found",
-                        "content": {
-                            "application/json": {
-                                "example": {
-                                    "error": "Article not found"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/scopus/author": {
             "get": {
                 "summary": "Get a list of authors",
@@ -428,34 +357,6 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/AuthorScopus"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error"
-                    }
-                }
-            }
-        },
-        "/scopus/author/getTotal": {
-            "get": {
-                "summary": "Get total count of authors",
-                "tags": [
-                    "Scopus Authors"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Total count of authors",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "count": {
-                                            "type": "integer"
-                                        }
                                     }
                                 }
                             }
@@ -634,31 +535,6 @@
                 }
             }
         },
-        "/scopus/journal/getTotal": {
-            "get": {
-                "summary": "Get the total count of journals",
-                "tags": [
-                    "Journal"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response with the total count",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "count": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/scopus/journal/{source_id}": {
             "get": {
                 "summary": "Get a journal by source ID",
@@ -683,58 +559,6 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Journal"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Journal not found",
-                        "content": {
-                            "application/json": {
-                                "example": {
-                                    "error": "Journal not found"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/scopus/journal/citescore/{source_id}": {
-            "get": {
-                "summary": "Get CiteScore data for a journal by source ID",
-                "tags": [
-                    "Journal"
-                ],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "source_id",
-                        "schema": {
-                            "type": "string"
-                        },
-                        "required": true,
-                        "description": "Source ID of the journal"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response with CiteScore data",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "source_id": {
-                                            "type": "string"
-                                        },
-                                        "cite_source": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
                                 }
                             }
                         }

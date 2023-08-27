@@ -34,15 +34,34 @@ const hasEidOfAuthor = async (eid, scopus_id) => {
 
 const pushLogScraping = (data, type) => {
   try {
-    if (type === "author") {
+    const errorAuthor = [];
+    const errorArticle = [];
+    let errorAll = [];
 
+    if (type === "author") {
       allLogScraping.author = { numAuthorScraping: data.numAuthorScraping };
-      allLogScraping.error = data.error
+      errorAuthor.push(...data.error);
     } else if (type === "article") {
-      allLogScraping.article = data;
+      allLogScraping.article = { numArticleScraping: data.numArticleScraping };
+      errorArticle.push(...data.error);
     } else if (type === "journal") {
       allLogScraping.journal = data;
     }
+
+    errorAll = errorAll.concat(errorAuthor, errorArticle);
+
+    const linkError = allLogScraping.error || [];
+
+    for (const newEntry of errorAll) {
+      const isDuplicate = linkError.find(
+        ({ name, url }) => name === newEntry.name && url === newEntry.url
+      );
+      if (!isDuplicate) {
+        linkError.push(newEntry);
+      }
+    }
+    allLogScraping.error = linkError;
+
     return "success";
   } catch (err) {
     return "failure";
@@ -114,9 +133,9 @@ const addCountDocumentInWu = async (scopusId, documentsInWu, authorName) => {
     const result = await AuthorScopus.updateOne(filter, updateOperation);
 
     if (result.modifiedCount > 0) {
-      console.log(`Added count of documents in Wu for ${authorName} successfully.`);
+      console.log(`Added count of documents in Wu for ${authorName} successfully.\n`);
     } else {
-      const zeroDocumentFilter = { author_scopus_id: scopusId, wu_documents: 0 };
+      const zeroDocumentFilter = { author_scopus_id: scopusId, wu_documents: "0" };
       const zeroDocumentUpdate = { $set: { wu_documents: documentsInWu } };
       const zeroDocumentResult = await AuthorScopus.updateOne(zeroDocumentFilter, zeroDocumentUpdate);
 
@@ -246,23 +265,6 @@ const getyearJournal = async (sourceId) => {
   }
 };
 
-const hasSourceEID = async (eid) => {
-  try {
-    const count = await Coressponding.countDocuments({ scopusEID: eid });
-    if (count > 0) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    console.error(
-      "An error occurred while getting source ID from the database:",
-      error
-    );
-    return false;
-  }
-};
-
 const hasSourceID = async (sourceId) => {
   try {
     const journal = await Journal.findOne({ source_id: sourceId });
@@ -378,7 +380,44 @@ const getArticleOfAuthorNotPage = async (scopus_id) => {
   }
 }
 
+const hasSourceEID = async (eid) => {
+  try {
+    const count = await Coressponding.countDocuments({ scopusEID: eid });
+    if (count > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error(
+      "An error occurred while getting source ID from the database:",
+      error
+    );
+    return false;
+  }
+};
+
+const hasFieldWuDoc = async (scopus_id) => {
+  try {
+    const query = {
+      author_scopus_id: scopus_id,
+      wu_documents: { $exists: true }
+    };
+    const docs = await AuthorScopus.find(query);
+    if (docs.length > 0) {
+      return true
+    } else {
+      return false
+    }
+
+  } catch (error) {
+    console.error('Error:', error);
+    return null
+  }
+}
+
 module.exports = {
+  hasFieldWuDoc,
   getArticleOfAuthorNotPage,
   getNumArticleOfAuthorInDB,
   getOldNumDocInPage,

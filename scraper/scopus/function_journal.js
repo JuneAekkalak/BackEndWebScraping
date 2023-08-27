@@ -70,6 +70,7 @@ const scrapJournal = async (sourceID) => {
     }
 
     let numScraping = 0;
+    let error = linkError
 
     if (addJournalData.length > 0 && journal.length > 0) {
       numScraping = journal.length + addJournalData.length;
@@ -85,7 +86,8 @@ const scrapJournal = async (sourceID) => {
       console.log("\n ---- Finish Scraping New Journal ---- \n");
       const logScrapingJournal = displayLogJournal(
         numScraping,
-        numUpdateCiteScoreYear
+        numUpdateCiteScoreYear,
+        error
       );
       addSourceId = [];
       return logScrapingJournal;
@@ -96,11 +98,13 @@ const scrapJournal = async (sourceID) => {
       );
       const logScrapingJournal = displayLogJournal(
         numScraping,
-        numUpdateCiteScoreYear
+        numUpdateCiteScoreYear,
+        error
       );
       sourceId = [];
       return logScrapingJournal;
     }
+
   } catch (error) {
     console.error("\nError occurred while scraping\n : ", error);
     if (typeof sourceID !== "undefined") {
@@ -109,6 +113,8 @@ const scrapJournal = async (sourceID) => {
       await scrapJournal();
     }
     return [];
+  } finally {
+    linkError = []
   }
 };
 
@@ -137,10 +143,6 @@ const processBatch = async (journalData, hasSource, round, sourceID) => {
         let browser;
 
         try {
-          browser = await puppeteer.launch({
-            headless: "new",
-          });
-          const page = await browser.newPage();
           const currentIndex = i + index + 1;
           console.log(
             currentIndex,
@@ -149,132 +151,171 @@ const processBatch = async (journalData, hasSource, round, sourceID) => {
             "| Source ID:",
             journalItem
           );
-          const link = `https://www.scopus.com/sourceid/${journalItem}`;
-          const response = await page.goto(link, {
-            waitUntil: "networkidle2",
-          });
-          await page.waitForTimeout(1600);
-          await waitForElement(
-            "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
-          );
-          await waitForElement(
-            "#CSCategoryTBody > tr:nth-child(1) > td:nth-child(1) > div.treeLineContainer > span"
-          );
-          if (response.ok()) {
-            const hasSourceId = await hasSourceID(journalItem);
-            let yearLastestInDb = 0;
-            let yearLastestInWebPage = 0;
-            let numNewJournal = 0;
 
-            if (hasSource) {
-              let yearDb = Number(
-                await getCiteSourceYearLastestInDb(journalItem)
-              );
-              if (yearDb === null) {
-                yearDb = 0;
-              }
-              await waitForElement("#year-button > span.ui-selectmenu-text");
-              yearLastestInWebPage = await scraperCiteScoreYearLastestInWebPage(
-                page
-              );
-              yearLastestInDb = yearDb;
+          let hasSourceId = await hasSourceID(journalItem);
 
-              const numberYearLastestInWebPage =
-                yearLastestInWebPage.toString().length;
-              const numberYearLastestInDb = yearLastestInDb.toString().length;
+          if (
+            (typeof sourceID !== "undefined" && hasSourceId === false) ||
+            typeof sourceID === "undefined"
+          ) {
+            browser = await puppeteer.launch({ headless: "new" });
+            const page = await browser.newPage();
+            const link = `https://www.scopus.com/sourceid/${journalItem}`;
+            const response = await page.goto(link, {
+              waitUntil: "networkidle2",
+            });
+            await page.waitForTimeout(1600);
+            await waitForElement(
+              "#csCalculation > div:nth-child(2) > div:nth-child(2) > div > span.fupValue > a > span"
+            );
+            await waitForElement(
+              "#CSCategoryTBody > tr:nth-child(1) > td:nth-child(1) > div.treeLineContainer > span"
+            );
 
-              if (numberYearLastestInWebPage > numberYearLastestInDb) {
-                numNewJournal = 0;
-              } else {
-                numNewJournal = yearLastestInWebPage - yearLastestInDb;
-              }
+            const element = await page.$(
+              "#sourceSearchForm > div > div.alert.alert-danger.marginBottomHalf"
+            );
+
+            let checkSourceNotFound = false;
+
+            if (element) {
+              checkSourceNotFound = true;
             }
 
-            if (!hasSourceId) {
-              firstScraping = true;
-              console.log(
-                "\n------------------------------------------------------------------------------------"
-              );
-              console.log("First Scraping Journal Source ID : ", journalItem);
-              console.log(
-                "------------------------------------------------------------------------------------"
-              );
-              console.log("yearLastestInWebPage = ", yearLastestInWebPage);
-              console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+            if (response.ok() && !checkSourceNotFound) {
+              let yearLastestInDb = 0;
+              let yearLastestInWebPage = 0;
+              let numNewJournal = 0;
 
-              let data = await scraperJournalData(
-                journalItem,
-                numNewJournal,
-                page
-              );
+              if (hasSource) {
+                let yearDb = Number(
+                  await getCiteSourceYearLastestInDb(journalItem)
+                );
+                if (yearDb === null) {
+                  yearDb = 0;
+                }
+                await waitForElement("#year-button > span.ui-selectmenu-text");
+                yearLastestInWebPage =
+                  await scraperCiteScoreYearLastestInWebPage(page);
+                yearLastestInDb = yearDb;
 
-              if (data !== null) {
-                if (!isDuplicateSourceID(data.source_id)) {
-                  journal.push(data);
+                const numberYearLastestInWebPage =
+                  yearLastestInWebPage.toString().length;
+                const numberYearLastestInDb = yearLastestInDb.toString().length;
+
+                if (numberYearLastestInWebPage > numberYearLastestInDb) {
+                  numNewJournal = 0;
+                } else {
+                  numNewJournal = yearLastestInWebPage - yearLastestInDb;
                 }
               }
 
-              return {
-                status: "fulfilled",
-                value: data,
-                source_id: journalItem,
-                firstScraping: firstScraping,
-              };
-            } else if (yearLastestInWebPage > yearLastestInDb) {
-              checkUpdate = true;
-              console.log(
-                "\n------------------------------------------------------"
-              );
-              console.log("Update Journal Data Source ID : ", journalItem);
-              console.log(
-                "-------------------------------------------------------"
-              );
-              console.log("yearLastestInWebPage = ", yearLastestInWebPage);
-              console.log("yearLastestInDb = ", yearLastestInDb, "\n");
-              const new_cite_source_year = await processDropdowns(
-                page,
-                numNewJournal
-              );
-              if (new_cite_source_year) {
-                updateCiteScoreYear =
-                  updateCiteScoreYear.concat(new_cite_source_year);
+              if (!hasSourceId) {
+                firstScraping = true;
+                console.log(
+                  "\n------------------------------------------------------------------------------------"
+                );
+                console.log("First Scraping Journal Source ID : ", journalItem);
+                console.log(
+                  "------------------------------------------------------------------------------------"
+                );
+                console.log("yearLastestInWebPage = ", yearLastestInWebPage);
+                console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+
+                let data = await scraperJournalData(
+                  journalItem,
+                  numNewJournal,
+                  page
+                );
+
+                if (data !== null) {
+                  if (!isDuplicateSourceID(data.source_id)) {
+                    journal.push(data);
+                  }
+                }
+
+                return {
+                  status: "fulfilled",
+                  value: data,
+                  source_id: journalItem,
+                  firstScraping: firstScraping,
+                };
+              } else if (yearLastestInWebPage > yearLastestInDb) {
+                checkUpdate = true;
+                console.log(
+                  "\n------------------------------------------------------"
+                );
+                console.log("Update Journal Data Source ID : ", journalItem);
+                console.log(
+                  "-------------------------------------------------------"
+                );
+                console.log("yearLastestInWebPage = ", yearLastestInWebPage);
+                console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+                const new_cite_source_year = await processDropdowns(
+                  page,
+                  numNewJournal
+                );
+                if (new_cite_source_year) {
+                  updateCiteScoreYear =
+                    updateCiteScoreYear.concat(new_cite_source_year);
+                }
+                console.log(
+                  "New Cite Source Year Data Of Source ID | ",
+                  journalItem,
+                  " : ",
+                  new_cite_source_year
+                );
+                return {
+                  status: "fulfilled",
+                  value: new_cite_source_year,
+                  source_id: journalItem,
+                  checkUpdate: checkUpdate,
+                };
+              } else {
+                checkNotUpdate = true;
+                if (typeof sourceID !== "undefined") {
+                  console.log("\n---- Source ID : ", journalItem, "is duplicate");
+                } else if (yearLastestInWebPage === yearLastestInDb) {
+                  console.log(
+                    "\n-----------------------------------------------------------------------------"
+                  );
+                  console.log(
+                    "Cite Score Year of Source ID : ",
+                    journalItem,
+                    "is not update"
+                  );
+                  console.log(
+                    "-----------------------------------------------------------------------------"
+                  );
+                  console.log("yearLastestInWebPage = ", yearLastestInWebPage);
+                  console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+                }
+
+                return {
+                  status: "fulfilled",
+                  value: [],
+                  checkNotUpdate: checkNotUpdate,
+                };
               }
-              console.log(
-                "New Cite Source Year Data Of Source ID | ",
-                journalItem,
-                " : ",
-                new_cite_source_year
-              );
-              return {
-                status: "fulfilled",
-                value: new_cite_source_year,
-                source_id: journalItem,
-                checkUpdate: checkUpdate,
-              };
             } else {
-              checkNotUpdate = true;
-              console.log(
-                "\n-----------------------------------------------------------------------------"
-              );
-              console.log(
-                "Cite Score Year of Source ID : ",
-                journalItem,
-                "is not update"
-              );
-              console.log(
-                "-----------------------------------------------------------------------------"
-              );
-              console.log("yearLastestInWebPage = ", yearLastestInWebPage);
-              console.log("yearLastestInDb = ", yearLastestInDb, "\n");
+              const isDuplicate = linkError.includes(link);
+              if (!isDuplicate) {
+                linkError.push(link);
+              }
+              console.log("\nlinkError : ", [link], "\n");
               return {
                 status: "fulfilled",
                 value: [],
-                checkNotUpdate: checkNotUpdate,
               };
             }
           } else {
-            linkError.push(link);
-            return;
+            if (typeof sourceID !== "undefined") {
+              console.log("\n---- Source ID : ", journalItem, "is duplicate");
+            }
+            return {
+              status: "fulfilled",
+              value: [],
+            };
           }
         } catch (error) {
           console.error("Error: ", error);
@@ -319,8 +360,6 @@ const processBatch = async (journalData, hasSource, round, sourceID) => {
                 }
               } else if (data.checkNotUpdate) {
                 continue;
-              } else {
-                console.log("------ Array 0 --------");
               }
             } else if (result.status === "rejected") {
               console.error("\nError occurred while scraping\n");
@@ -370,11 +409,12 @@ const processBatch = async (journalData, hasSource, round, sourceID) => {
   }
 };
 
-const displayLogJournal = async (numScraping, numUpdateCiteScoreYear) => {
+const displayLogJournal = async (numScraping, numUpdateCiteScoreYear, error) => {
   const logScrapingJournal = {
     message: "Scraping Journal Data For Scopus Completed Successfully.",
     numJournalScraping: numScraping,
     numUpdateCiteScoreYear: numUpdateCiteScoreYear,
+    error: error
   };
   pushLogScraping(logScrapingJournal, "journal");
 
@@ -396,6 +436,7 @@ const resetVariableJournal = async () => {
   addJournalData = [];
   updateCiteScoreYear = [];
   journal = [];
+  linkError = []
 };
 
 const scraperCiteScoreYearLastestInWebPage = async (page) => {
