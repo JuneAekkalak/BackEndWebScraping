@@ -44,7 +44,9 @@ router.get('/author', async (req, res, next) => {
                     subject_area: 1,
                     image: 1,
                     h_index: { $ifNull: ['$h_index', 0] },
-                    documents: 1
+                    documents: 1,
+                    scholar_id: 1
+
                 }
             },
             {
