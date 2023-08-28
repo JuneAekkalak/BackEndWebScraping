@@ -50,9 +50,8 @@ app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 const cronFormat = getCron()
 cron.schedule(cronFormat, async () => {
   try {
-    console.log('Running scraper job... At 17:25');
     const scopus = axios.get(`${baseApi}scraper/scraper-scopus-cron`);
-    const scholar = axios.get(`${baseApi}scraper/scholar`);
+    // const scholar = axios.get(`${baseApi}scraper/scholar`);
 
   } catch (error) {
     console.error("Cron job error:", error);

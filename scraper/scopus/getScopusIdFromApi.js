@@ -11,7 +11,7 @@ const getScopusAuthIDs = async (pageNumber) => {
         const scopusAuthIDs = data.value.records
             .filter((entry) => entry.researcher.scopusAuthID !== "")
             .map((entry) => ({
-                name: entry.researcher.auGivenName.replace(/[\r\n]/g, ""),
+                name: entry.researcher.auGivenName.replace(/[\r\n]/g, " "),
                 scopus_id: entry.researcher.scopusAuthID,
             }))
 

@@ -9,5 +9,49 @@
       "numUpdateCiteScoreYear": 0
     },
     "errorLinkRequest": []
+  },
+  {
+    "message": "Scraping Data For Scopus Completed Successfully.",
+    "finishTime": "2023-08-28 11:53:59",
+    "numAuthorScraping": 1,
+    "numArticleScraping": 10,
+    "numJournalScraping": {
+      "numJournalScraping": 4,
+      "numUpdateCiteScoreYear": 0
+    },
+    "errorLinkRequest": []
+  },
+  {
+    "message": "Scraping Data For Scopus Completed Successfully.",
+    "finishTime": "2023-08-28 12:04:59",
+    "numAuthorScraping": 2,
+    "numArticleScraping": 3,
+    "numJournalScraping": {
+      "numJournalScraping": 2,
+      "numUpdateCiteScoreYear": 0
+    },
+    "errorLinkRequest": []
+  },
+  {
+    "message": "Scraping Data For Scopus Completed Successfully.",
+    "finishTime": "2023-08-28 12:09:43",
+    "numAuthorScraping": 2,
+    "numArticleScraping": 1,
+    "numJournalScraping": {
+      "numJournalScraping": 0,
+      "numUpdateCiteScoreYear": 0
+    },
+    "errorLinkRequest": []
+  },
+  {
+    "message": "Scraping Data For Scopus Completed Successfully.",
+    "finishTime": "2023-08-28 12:13:37",
+    "numAuthorScraping": 2,
+    "numArticleScraping": 0,
+    "numJournalScraping": {
+      "numJournalScraping": 0,
+      "numUpdateCiteScoreYear": 6
+    },
+    "errorLinkRequest": []
   }
 ]

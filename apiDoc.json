@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "Your API Documentation",
+        "title": "WU Researcher API Documentation",
         "version": "1.0.0",
         "description": "Documentation for your API"
     },
@@ -142,19 +142,19 @@
                 }
             }
         },
-        "/scholar/article/{id}": {
+        "/scholar/article/{oid}": {
             "get": {
-                "summary": "Get an article by ID from Scholar",
+                "summary": "Get an article by OID from Scholar",
                 "tags": [
                     "Scholar Articles"
                 ],
-                "description": "Retrieve an article by its ID from the Scholar route",
+                "description": "Retrieve an article by its OID from the Scholar route",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
+                        "name": "oid",
                         "required": true,
-                        "description": "ID of the article",
+                        "description": "OID of the article",
                         "schema": {
                             "type": "string"
                         }
@@ -229,93 +229,6 @@
                 }
             }
         },
-        "/scopus/article/{id}": {
-            "get": {
-                "summary": "Get an article by EID",
-                "tags": [
-                    "Scopus Articles"
-                ],
-                "description": "Retrieve an article by its ID",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "required": true,
-                        "description": "ID of the article",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArticleScopus"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Article not found",
-                        "content": {
-                            "application/json": {
-                                "example": {
-                                    "error": "Article not found"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/scopus/article/authorId/{id}": {
-            "get": {
-                "summary": "Get articles by author ID",
-                "tags": [
-                    "Scopus Articles"
-                ],
-                "description": "Retrieve articles by author's ID",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "required": true,
-                        "description": "ID of the author",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/ArticleScopus"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Articles not found for the given author ID",
-                        "content": {
-                            "application/json": {
-                                "example": {
-                                    "error": "Articles not found"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/scopus/author": {
             "get": {
                 "summary": "Get a list of authors",
@@ -368,21 +281,21 @@
                 }
             }
         },
-        "/scopus/author/{id}": {
+        "/scopus/author/{scopus_id}": {
             "get": {
-                "summary": "Get author by ID",
+                "summary": "Get author by scopus_id",
                 "tags": [
                     "Scopus Authors"
                 ],
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
+                        "name": "scopus_id",
                         "schema": {
                             "type": "string"
                         },
                         "required": true,
-                        "description": "ID of the author"
+                        "description": "scopus_id of the author"
                     }
                 ],
                 "responses": {
@@ -438,6 +351,93 @@
                     },
                     "500": {
                         "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/scopus/article/{eid}": {
+            "get": {
+                "summary": "Get an article by EID",
+                "tags": [
+                    "Scopus Articles"
+                ],
+                "description": "Retrieve an article by its EID",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "eid",
+                        "required": true,
+                        "description": "EID of the article",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArticleScopus"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Article not found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/scopus/article/authorId/{scopus_id}": {
+            "get": {
+                "summary": "Get articles by scopus_id",
+                "tags": [
+                    "Scopus Articles"
+                ],
+                "description": "Retrieve articles by scopus ID",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "scopus_id",
+                        "required": true,
+                        "description": "Scopus ID of the author",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ArticleScopus"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Articles not found for the given author ID",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "error": "Articles not found"
+                                }
+                            }
+                        }
                     }
                 }
             }
