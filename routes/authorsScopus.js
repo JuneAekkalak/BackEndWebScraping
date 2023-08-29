@@ -34,6 +34,12 @@ router.get('/author', async (req, res, next) => {
               then: 0,
               else: { $toInt: '$h_index' }
             }
+          },
+          author_name: {
+            $concat: [
+              { $toUpper: { $substrCP: ['$author_name', 0, 1] } },
+              { $toLower: { $substrCP: ['$author_name', 1, { $strLenCP: '$author_name' }] } }
+            ]
           }
         }
       },
@@ -49,7 +55,7 @@ router.get('/author', async (req, res, next) => {
           citations_by: 1
         }
       },
-      { $sort: sortQuery },
+      { $sort: { ...sortQuery, author_name: sortQuery.author_name } },
       { $skip: (pageNumber - 1) * limit },
       { $limit: limit }
     ]);
