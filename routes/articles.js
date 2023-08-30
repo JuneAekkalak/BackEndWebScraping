@@ -2,13 +2,15 @@ const express = require("express");
 const router = express.Router();
 const Article = require('../models/Article.js');
 
-router.get('/article/:oid', async (req, res, next) => {
+router.get('/article', async (req, res, next) => {
     try {
-        const { oid } = req.params;
-        const article = await Article.findById(oid);
+        const { scholar_id, article_id } = req.query;
+
+        const article = await Article.findOne({ scholar_id: scholar_id, article_id: article_id });
         if (!article) {
             return res.status(404).json({ error: 'Article not found' });
         }
+
         res.json(article);
     } catch (err) {
         next(err);

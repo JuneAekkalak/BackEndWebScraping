@@ -142,47 +142,74 @@
                 }
             }
         },
-        "/scholar/article/{oid}": {
+        "/scholar/article": {
             "get": {
-                "summary": "Get an article by OID from Scholar",
+                "summary": "Get article by article_id and scholar_id",
                 "tags": [
                     "Scholar Articles"
                 ],
-                "description": "Retrieve an article by its OID from the Scholar route",
                 "parameters": [
-                    {
-                        "in": "path",
-                        "name": "oid",
-                        "required": true,
-                        "description": "OID of the article",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
+                  {
+                    "in": "query",
+                    "name": "scholar_id",
+                    "schema": {
+                      "type": "string"
+                    },
+                    "required": true,
+                    "description": "The ID of the scholar"
+                  },
+                  {
+                    "in": "query",
+                    "name": "article_id",
+                    "schema": {
+                      "type": "string"
+                    },
+                    "required": true,
+                    "description": "The ID of the article"
+                  }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ArticleScholar"
-                                }
+                  "200": {
+                    "description": "Successful response with the article",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "_id": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "content": {
+                              "type": "string"
+                            },
+                            "scholar_id": {
+                              "type": "string"
                             }
+                          }
                         }
-                    },
-                    "404": {
-                        "description": "Article not found",
-                        "content": {
-                            "application/json": {
-                                "example": {
-                                    "error": "Article not found"
-                                }
-                            }
-                        }
+                      }
                     }
+                  },
+                  "404": {
+                    "description": "Article not found",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "error": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
-            }
+              }
         },
         "/scholar/article/authorId/{scholar_id}": {
             "get": {
