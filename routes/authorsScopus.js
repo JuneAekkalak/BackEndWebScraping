@@ -43,19 +43,19 @@ router.get('/author', async (req, res, next) => {
           }
         }
       },
-      {
-        $project: {
-          _id: 1,
-          author_scopus_id: 1,
-          author_name: 1,
-          citations: 1,
-          h_index: 1,
-          documents: 1,
-          wu_documents: 1,
-          citations_by: 1
-        }
-      },
-      { $sort: { ...sortQuery, author_name: sortQuery.author_name } },
+      // {
+      //   $project: {
+      //     _id: 1,
+      //     author_scopus_id: 1,
+      //     author_name: 1,
+      //     citations: 1,
+      //     h_index: 1,
+      //     documents: 1,
+      //     wu_documents: 1,
+      //     citations_by: 1
+      //   }
+      // },
+      { $sort: { ...sortQuery } },
       { $skip: (pageNumber - 1) * limit },
       { $limit: limit }
     ]);
