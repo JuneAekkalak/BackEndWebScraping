@@ -72,7 +72,7 @@ router.get('/author/:scholar_id', async (req, res, next) => {
         }
         const authore = {
             _id: author._id,
-            scholar_id: author.scholar,
+            scholar_id: author.scholar_id,
             author_name: author.author_name,
             department: author.department,
             subject_area: author.subject_area,
