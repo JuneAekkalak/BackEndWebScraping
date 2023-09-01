@@ -36,19 +36,19 @@ router.get('/author', async (req, res, next) => {
                     }
                 }
             },
-            {
-                $project: {
-                    _id: 1,
-                    author_name: 1,
-                    department: 1,
-                    subject_area: 1,
-                    image: 1,
-                    h_index: { $ifNull: ['$h_index', 0] },
-                    documents: 1,
-                    scholar_id: 1
+            // {
+            //     $project: {
+            //         _id: 1,
+            //         author_name: 1,
+            //         department: 1,
+            //         subject_area: 1,
+            //         image: 1,
+            //         h_index: { $ifNull: ['$h_index', 0] },
+            //         documents: 1,
+            //         scholar_id: 1
 
-                }
-            },
+            //     }
+            // },
             {
                 $sort: sortQuery
             },
