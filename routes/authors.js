@@ -36,19 +36,6 @@ router.get('/author', async (req, res, next) => {
                     }
                 }
             },
-            // {
-            //     $project: {
-            //         _id: 1,
-            //         author_name: 1,
-            //         department: 1,
-            //         subject_area: 1,
-            //         image: 1,
-            //         h_index: { $ifNull: ['$h_index', 0] },
-            //         documents: 1,
-            //         scholar_id: 1
-
-            //     }
-            // },
             {
                 $sort: sortQuery
             },
@@ -109,17 +96,6 @@ router.get('/author/name/:authorName', async (req, res, next) => {
                             else: { $toInt: { $arrayElemAt: ['$citation_by.table.h_index.all', 0] } }
                         }
                     }
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    author_name: 1,
-                    department: 1,
-                    subject_area: 1,
-                    image: 1,
-                    h_index: { $ifNull: ['$h_index', 0] },
-                    documents: 1
                 }
             },
             {
