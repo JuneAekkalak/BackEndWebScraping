@@ -55,22 +55,32 @@ router.get('/author', async (req, res, next) => {
 
 router.get('/author/getTotal', (req, res, next) => {
     Author.countDocuments()
-      .then((count) => {
-        res.json({ count });
-      })
-      .catch((err) => {
-        next(err);
-      });
-  });
+        .then((count) => {
+            res.json({ count });
+        })
+        .catch((err) => {
+            next(err);
+        });
+});
 
-  router.get('/author/:scholar_id', async (req, res, next) => {
+router.get('/author/:scholar_id', async (req, res, next) => {
     try {
         const { scholar_id } = req.params;
-        const author = await Author.findOne({'scholar_id' : scholar_id});
+        const author = await Author.findOne({ 'scholar_id': scholar_id });
         if (!author) {
             return res.status(404).json({ error: 'Author not found' });
         }
-        res.json(author);
+        const authore = {
+            _id: author._id,
+            scholar_id: author.scholar,
+            author_name: author.author_name,
+            department: author.department,
+            subject_area: author.subject_area,
+            documents: author.documents,
+            image: author.image,
+            citation_by: author.citation_by
+        }
+        res.json(authore);
     } catch (err) {
         next(err);
     }
