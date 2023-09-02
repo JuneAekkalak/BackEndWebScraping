@@ -7,7 +7,7 @@ router.get('/author', async (req, res, next) => {
   try {
     const { sortField, sortOrder, page } = req.query;
     const pageNumber = page || 1;
-    const limit = 20;
+    const limit = 22;
 
     const sortQuery = {};
     if (sortField === 'h-index') {
@@ -43,19 +43,7 @@ router.get('/author', async (req, res, next) => {
           }
         }
       },
-      // {
-      //   $project: {
-      //     _id: 1,
-      //     author_scopus_id: 1,
-      //     author_name: 1,
-      //     citations: 1,
-      //     h_index: 1,
-      //     documents: 1,
-      //     wu_documents: 1,
-      //     citations_by: 1
-      //   }
-      // },
-      { $sort: { ...sortQuery } },
+      { $sort: sortQuery },
       { $skip: (pageNumber - 1) * limit },
       { $limit: limit }
     ]);
