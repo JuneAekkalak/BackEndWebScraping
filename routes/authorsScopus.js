@@ -7,7 +7,7 @@ router.get('/author', async (req, res, next) => {
   try {
     const { sortField, sortOrder, page } = req.query;
     const pageNumber = page || 1;
-    const limit = 22;
+    const limit = 20;
 
     const sortQuery = {};
     if (sortField === 'h-index') {
@@ -15,7 +15,7 @@ router.get('/author', async (req, res, next) => {
     } else if (sortField === 'document-count') {
       sortQuery.wu_documents = sortOrder === 'desc' ? -1 : 1;
     } else if (sortField === 'name') {
-      sortQuery['author_name'] = sortOrder === 'desc' ? -1 : 1;
+      sortQuery.author_name = sortOrder === 'desc' ? -1 : 1;
     }
 
     const authors = await Author.aggregate([
@@ -43,9 +43,38 @@ router.get('/author', async (req, res, next) => {
           }
         }
       },
-      { $sort: sortQuery },
+      {
+        $group: {
+          _id: '$wu_documents',
+          authors: { $push: '$$ROOT' },
+          h_index: { $first: '$h_index' }, 
+          author_name: { $first: '$author_name' },
+        },
+      },
+      {
+        $unwind: '$authors',
+      },
+      {
+        $project: {
+          _id: 0,
+          author_scopus_id: '$authors.author_scopus_id',
+          author_name: '$authors.author_name',
+          citations: '$authors.citations',
+          citations_by: '$authors.citations_by',
+          documents: '$authors.documents',
+          h_index: '$authors.h_index',
+          subject_area: '$authors.subject_area',
+          citations_graph: '$authors.citations_graph',
+          documents_graph: '$authors.documents_graph',
+          url: '$authors.url',
+          wu_documents: '$authors.wu_documents'
+        }
+      },
+      {
+        $sort: {...sortQuery},
+      },
       { $skip: (pageNumber - 1) * limit },
-      { $limit: limit }
+      { $limit: limit },
     ]);
 
     res.json(authors);
@@ -53,6 +82,7 @@ router.get('/author', async (req, res, next) => {
     next(error);
   }
 });
+
 
 router.get('/author/getTotal', (req, res, next) => {
   Author.countDocuments()
