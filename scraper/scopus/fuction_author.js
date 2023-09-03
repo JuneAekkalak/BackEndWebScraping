@@ -25,7 +25,7 @@ const scraperAuthorScopus = async (authorId) => {
 
     } else {
       allURLs = await getAllScopusAuthIDs();
-      allURLs = allURLs.slice(0, 2);
+      allURLs = allURLs.slice(0, allURLs.length);
     }
 
     const baseAuthorUrl = getBaseURL();
@@ -335,6 +335,7 @@ const getScopusID = async (url) => {
 const scrapSubjectArea = async (page) => {
   try {
     await page.click("#AuthorHeader__showAllAuthorInfo");
+    await page.waitForTimeout(700);
     const html = await page.content();
     const $ = cheerio.load(html);
     const clickViewMore = $(

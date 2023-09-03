@@ -52,7 +52,7 @@ router.get('/author', async (req, res, next) => {
             {
                 $limit: limit
             }
-        ]);
+        ]).collation({ locale: 'en_US', numericOrdering: true });
         
         res.json(authors);
     } catch (error) {

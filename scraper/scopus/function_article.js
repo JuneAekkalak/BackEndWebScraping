@@ -53,7 +53,7 @@ const scraperArticleScopus = async (authorId) => {
       allURLs = authorId;
     } else {
       allURLs = await getAllScopusAuthIDs();
-      allURLs = allURLs.slice(0, 2);
+      allURLs = allURLs.slice(0, allURLs.length);
     }
 
     if (numOldDocument === 0) {
