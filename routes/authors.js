@@ -33,6 +33,13 @@ router.get('/author', async (req, res, next) => {
                             then: 0,
                             else: { $toInt: { $arrayElemAt: ['$citation_by.table.h_index.all', 0] } }
                         }
+                    },
+                    citation_by: {
+                        $cond: {
+                            if: { $eq: ['$citation_by.graph', []] },
+                            then: {},
+                            else: '$citation_by'
+                        }
                     }
                 }
             },
@@ -46,7 +53,7 @@ router.get('/author', async (req, res, next) => {
                 $limit: limit
             }
         ]);
-
+        
         res.json(authors);
     } catch (error) {
         next(error);
@@ -67,10 +74,12 @@ router.get('/author/:scholar_id', async (req, res, next) => {
     try {
         const { scholar_id } = req.params;
         const author = await Author.findOne({ 'scholar_id': scholar_id });
+
         if (!author) {
             return res.status(404).json({ error: 'Author not found' });
         }
-        const authore = {
+
+        const authorData = {
             _id: author._id,
             scholar_id: author.scholar_id,
             author_name: author.author_name,
@@ -79,12 +88,18 @@ router.get('/author/:scholar_id', async (req, res, next) => {
             documents: author.documents,
             image: author.image,
             citation_by: author.citation_by
+        };
+
+        if (Array.isArray(author.citation_by.graph) && author.citation_by.graph.length === 0) {
+            authorData.citation_by = {}; 
         }
-        res.json(authore);
+
+        res.json(authorData);
     } catch (err) {
         next(err);
     }
 });
+
 
 router.get('/author/name/:authorName', async (req, res, next) => {
     try {
@@ -96,7 +111,7 @@ router.get('/author/name/:authorName', async (req, res, next) => {
             query.author_name = { $regex: regex };
         }
 
-        const authors = await Author.aggregate([
+        const pipeline = [
             {
                 $addFields: {
                     h_index: {
@@ -105,17 +120,27 @@ router.get('/author/name/:authorName', async (req, res, next) => {
                             then: 0,
                             else: { $toInt: { $arrayElemAt: ['$citation_by.table.h_index.all', 0] } }
                         }
-                    }
+                    },
+                    citation_by: {
+                        $cond: {
+                            if: { $eq: ['$citation_by.graph', []] },
+                            then: {},
+                            else: '$citation_by'
+                        }
+                    },
                 }
             },
             {
                 $match: query
             }
-        ]);
+        ];
+
+        const authors = await Author.aggregate(pipeline);
         res.json(authors);
     } catch (error) {
         next(error);
     }
 });
+
 
 module.exports = router;

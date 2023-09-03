@@ -25,7 +25,7 @@ const scraperAuthorScopus = async (authorId) => {
 
     } else {
       allURLs = await getAllScopusAuthIDs();
-      allURLs = allURLs.slice(0, allURLs.length);
+      allURLs = allURLs.slice(0, 2);
     }
 
     const baseAuthorUrl = getBaseURL();
