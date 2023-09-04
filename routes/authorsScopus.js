@@ -36,11 +36,27 @@ router.get('/author', async (req, res, next) => {
             }
           },
           author_name: {
-            $concat: [
-              { $toUpper: { $substrCP: ['$author_name', 0, 1] } },
-              { $toLower: { $substrCP: ['$author_name', 1, { $strLenCP: '$author_name' }] } }
-            ]
-          }
+            $trim: {
+              input: {
+                $reduce: {
+                  input: { $split: ['$author_name', ' '] },
+                  initialValue: '',
+                  in: {
+                    $concat: [
+                      '$$value',
+                      ' ',
+                      {
+                        $concat: [
+                          { $toUpper: { $substrCP: ['$$this', 0, 1] } },
+                          { $toLower: { $substrCP: ['$$this', 1, { $strLenCP: '$$this' }] } }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          } 
         }
       },
       {
@@ -113,7 +129,7 @@ router.get('/author/name/:authorName', (req, res, next) => {
   const query = {};
 
   if (authorName) {
-    const regex = new RegExp(`.*${authorName}.*`, 'i');
+    const regex = new RegExp(`.*${authorName.replace(/ /g, '.*')}.*`, 'i');
     query.author_name = { $regex: regex };
   }
 
@@ -125,6 +141,5 @@ router.get('/author/name/:authorName', (req, res, next) => {
       next(err);
     });
 });
-
 
 module.exports = router;
