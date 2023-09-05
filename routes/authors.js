@@ -17,6 +17,8 @@ router.get('/author', async (req, res, next) => {
             sortQuery.author_name = sortOrder === 'desc' ? -1 : 1;
         }
 
+        sortQuery._id = 1;
+
         const authors = await Author.aggregate([
             {
                 $addFields: {
@@ -53,7 +55,7 @@ router.get('/author', async (req, res, next) => {
                 $limit: limit
             }
         ]).collation({ locale: 'en_US', numericOrdering: true });
-        
+
         res.json(authors);
     } catch (error) {
         next(error);
@@ -91,7 +93,7 @@ router.get('/author/:scholar_id', async (req, res, next) => {
         };
 
         if (Array.isArray(author.citation_by.graph) && author.citation_by.graph.length === 0) {
-            authorData.citation_by = {}; 
+            authorData.citation_by = {};
         }
 
         res.json(authorData);

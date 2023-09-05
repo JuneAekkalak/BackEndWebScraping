@@ -53,7 +53,7 @@ const scraperArticleScopus = async (authorId) => {
       allURLs = authorId;
     } else {
       allURLs = await getAllScopusAuthIDs();
-      allURLs = allURLs.slice(0, allURLs.length);
+      allURLs = allURLs.slice(0, 2);
     }
 
     if (numOldDocument === 0) {
@@ -74,7 +74,7 @@ const scraperArticleScopus = async (authorId) => {
         checkUpdate = false;
         checkNotUpdate = false;
         checkFirst = false;
-        const browser = await puppeteer.launch({ headless: "new" });
+        const browser = await puppeteer.launch({ headless: false });
         const page = await browser.newPage();
 
         try {

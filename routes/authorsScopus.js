@@ -18,6 +18,8 @@ router.get('/author', async (req, res, next) => {
       sortQuery.author_name = sortOrder === 'desc' ? -1 : 1;
     }
 
+    sortQuery._id = 1;
+
     const authors = await Author.aggregate([
       {
         $addFields: {
@@ -56,41 +58,16 @@ router.get('/author', async (req, res, next) => {
                 }
               }
             }
-          } 
+          }
         }
       },
       {
-        $group: {
-          _id: '$wu_documents',
-          authors: { $push: '$$ROOT' },
-          h_index: { $first: '$h_index' }, 
-          author_name: { $first: '$author_name' },
-        },
-      },
-      {
-        $unwind: '$authors',
-      },
-      {
-        $project: {
-          _id: 0,
-          author_scopus_id: '$authors.author_scopus_id',
-          author_name: '$authors.author_name',
-          citations: '$authors.citations',
-          citations_by: '$authors.citations_by',
-          documents: '$authors.documents',
-          h_index: '$authors.h_index',
-          subject_area: '$authors.subject_area',
-          citations_graph: '$authors.citations_graph',
-          documents_graph: '$authors.documents_graph',
-          url: '$authors.url',
-          wu_documents: '$authors.wu_documents'
-        }
-      },
-      {
-        $sort: {...sortQuery},
+        $sort: { ...sortQuery },
       },
       { $skip: (pageNumber - 1) * limit },
       { $limit: limit },
+      // { $skip: (pageNumber - 1) * Number(limit) },
+      // { $limit: Number(limit) },
     ]);
 
     res.json(authors);
@@ -98,7 +75,6 @@ router.get('/author', async (req, res, next) => {
     next(error);
   }
 });
-
 
 router.get('/author/getTotal', (req, res, next) => {
   Author.countDocuments()
@@ -143,3 +119,59 @@ router.get('/author/name/:authorName', (req, res, next) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// router.get('/author/count', async (req, res, next) => {
+//   try {
+//     const authorCount = await Author.countDocuments();
+//     console.log(authorCount);
+//     res.json(authorCount);
+//   } catch (err) {
+//     next(err);
+//   }
+// });
+
+// {
+      //   $group: {
+      //     _id: '$wu_documents',
+      //     authors: { $push: '$$ROOT' },
+      //     h_index: { $first: '$h_index' },
+      //     author_name: { $first: '$author_name' },
+      //   },
+      // },
+      // {
+      //   $unwind: '$authors',
+      // },
+      // {
+      //   $project: {
+      //     _id: 0,
+      //     author_scopus_id: '$authors.author_scopus_id',
+      //     author_name: '$authors.author_name',
+      //     citations: '$authors.citations',
+      //     citations_by: '$authors.citations_by',
+      //     documents: '$authors.documents',
+      //     h_index: '$authors.h_index',
+      //     subject_area: '$authors.subject_area',
+      //     citations_graph: '$authors.citations_graph',
+      //     documents_graph: '$authors.documents_graph',
+      //     url: '$authors.url',
+      //     wu_documents: '$authors.wu_documents'
+      //   }
+      // },

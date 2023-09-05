@@ -25,7 +25,7 @@ const scraperAuthorScopus = async (authorId) => {
 
     } else {
       allURLs = await getAllScopusAuthIDs();
-      allURLs = allURLs.slice(0, allURLs.length);
+      allURLs = allURLs.slice(0, 2);
     }
 
     const baseAuthorUrl = getBaseURL();
@@ -44,7 +44,7 @@ const scraperAuthorScopus = async (authorId) => {
         const author_url = `${baseAuthorUrl}${scopusId}`;
         console.log(`URL: ${author_url}`);
 
-        const browser = await puppeteer.launch({ headless: "new" });
+        const browser = await puppeteer.launch({ headless: false });
         const page = await browser.newPage();
         try {
           let author_data = await scrapeAuthorData(author_url, page, data.name);

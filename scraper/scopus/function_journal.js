@@ -158,7 +158,7 @@ const processBatch = async (journalData, hasSource, round, sourceID) => {
             (typeof sourceID !== "undefined" && hasSourceId === false) ||
             typeof sourceID === "undefined"
           ) {
-            browser = await puppeteer.launch({ headless: "new" });
+            browser = await puppeteer.launch({ headless: false });
             const page = await browser.newPage();
             const link = `https://www.scopus.com/sourceid/${journalItem}`;
             const response = await page.goto(link, {

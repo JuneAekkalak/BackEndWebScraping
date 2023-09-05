@@ -140,7 +140,7 @@ const getAuthorAllDetail = async (authorObject, number_author, length) => {
       const content = await getArticleUrl(html, selector);
 
       console.log(
-        "Author ",
+        "Author Scholar ",
         number_author,
         " / ",
         length,

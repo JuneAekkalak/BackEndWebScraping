@@ -115,7 +115,8 @@ router.get("/scraper-scopus-cron", async (req, res) => {
 router.get("/scholar", async (req, res) => {
   try {
     let count = 0;
-    const authorURL = await getURLScholar();
+    let authorURL = await getURLScholar();
+    authorURL = authorURL.slice(0, 2);
 
 
     let url_not_ready = [];
